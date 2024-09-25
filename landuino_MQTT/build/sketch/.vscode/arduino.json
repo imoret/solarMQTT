@@ -1,0 +1,7 @@
+#line 1 "/home/moret/nextcloud/documentos/Solar/consumoExcedentes/sketchs/landuino_MQTT/.vscode/arduino.json"
+{
+    "sketch": "landuino_MQTT.ino",
+    "output": "build",
+    "board": "arduino:avr:uno",
+    "port": "/dev/ttyACM0"
+}

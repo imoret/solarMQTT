@@ -1,0 +1,6 @@
+{
+    "sketch": "landuino_MQTT.ino",
+    "output": "build",
+    "board": "arduino:avr:uno",
+    "port": "/dev/ttyACM0"
+}
