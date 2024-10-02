@@ -11,7 +11,6 @@ dispositivo::dispositivo(int p, int pPower, String n)
 String dispositivo::status()
 {
     String status = "'nombre':'" + nombre + "','estado':'" + estado + "','consumo':" + consumo();
-    // Serial.println(status);
     return (status);
 }
 
@@ -50,11 +49,11 @@ float dispositivo::consumo()
 
 void dispositivo::setPin(String v)
 {
-    if (v == "HIGH")
+    if (v == "True")
     {
         digitalWrite(pin, HIGH);
         estado = 255;
-    }else if (v == "LOW")
+    }else if (v == "False")
     {
         digitalWrite(pin, LOW);
         estado = 0;
