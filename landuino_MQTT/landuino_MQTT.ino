@@ -1,13 +1,12 @@
 #include <ArduinoJson.h>
 #include <Ethernet2.h>
-#include <EthernetUdp2.h>
 #include <ArduinoMqttClient.h>
 #include <string.h>
 #include <avr/wdt.h>
 #include "dispositivos.h"
 
 const char ardName[] = "ard0/";
-const char topicBase[] = "Arduino/";
+const char topicBase[] = "Arduinos/";
 byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED}; // Ponemos la dirección MAC de la Ethernet Shield
 IPAddress ip(192, 168, 2, 177);                    // Asignamos  la IP al Arduino
 EthernetClient client;
@@ -31,8 +30,6 @@ dispositivo *dispositivos[10];
 void setup()
 {
     wdt_disable();
-    Serial.begin(115200);
-    Serial.println(F("Ini"));
     for (int i = 0; i < 10; i++)
     {
         pinMode(i, OUTPUT);
@@ -111,7 +108,6 @@ void onMqttMessage(int messageSize)
         i++;
     }
 
-    Serial.println(message);
     StaticJsonDocument<200> doc;
     deserializeJson(doc, message);
     String command = doc["command"];
@@ -129,16 +125,6 @@ void onMqttMessage(int messageSize)
         dispositivos[pin] = new dispositivo(pin, pinPower, nombre);
         dispositivos[pin]->setPin("LOW");
         sendStatus(pin);
-        /*
-                if (tipo == "capacitativo")
-                {
-                    dispositivos[pin] = new capacitativo(pin, pinPower, nombre);
-                }
-                if (tipo == "resistivo")
-                {
-                    dispositivos[pin] = new resistivo(pin, pinPower, nombre);
-                }
-        */
     }
 
     // ####### setPin
@@ -189,7 +175,7 @@ void sendStatus(int i)
             bool retained = false;
             int qos = 1;
             bool dup = false;
-            mqttClient.beginMessage(topic0+dispositivos[i]->nombre, message.length(), retained, qos, dup);
+            mqttClient.beginMessage("Dispositivos"+dispositivos[i]->nombre+"status", message.length(), retained, qos, dup);
             mqttClient.print(message);
             mqttClient.endMessage();
         }
