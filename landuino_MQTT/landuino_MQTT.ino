@@ -95,6 +95,9 @@ void loop()
 
         // Envio un status
         sendStatus();
+
+        //Envio un online
+        sendOnline();
     }
 }
 
@@ -121,6 +124,14 @@ void onMqttMessage(int messageSize)
         String nombre = doc["nombre"];
         int pin = doc["pin"];
         int pinPower = doc["pinPower"];
+
+        // Configuro un "Last Will and Testamet" (LTW)
+        String willPayload = "false";
+        bool willRetain = true;
+        int willQos = 1;
+        mqttClient.beginWill("Dispositivos"+dispositivos[i]->nombre+"online", willPayload.length(), willRetain, willQos);
+        mqttClient.print(willPayload);
+        mqttClient.endWill();
 
         dispositivos[pin] = new dispositivo(pin, pinPower, nombre);
         dispositivos[pin]->setPin("LOW");
@@ -167,16 +178,32 @@ void sendStatus()
 void sendStatus(int i)
 {
     wdt_reset();
+    if (dispositivos[i] != NULL)
+    {
+        String message = "{'event':'status',";
+        message.concat(dispositivos[i]->status());
+        message.concat("}");
+        bool retained = false;
+        int qos = 1;
+        bool dup = false;
+        mqttClient.beginMessage("Dispositivos"+dispositivos[i]->nombre+"status", message.length(), retained, qos, dup);
+        mqttClient.print(message);
+        mqttClient.endMessage();
+    }
+}
+
+void sendOnline(){
+    for (int i =0 ; i<10; i++){
+        wdt_reset();
         if (dispositivos[i] != NULL)
         {
-            String message = "{'event':'status',";
-            message.concat(dispositivos[i]->status());
-            message.concat("}");
-            bool retained = false;
+            String message = "true";
+            bool retained = true;
             int qos = 1;
             bool dup = false;
-            mqttClient.beginMessage("Dispositivos"+dispositivos[i]->nombre+"status", message.length(), retained, qos, dup);
-            mqttClient.print(message);
+            mqttClient.beginMessage("Dispositivos"+dispositivos[i]->nombre+"online", message.length(), retained, qos, dup);
+            mqttClient.print(F("true"));
             mqttClient.endMessage();
         }
+    }
 }
