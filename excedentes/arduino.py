@@ -132,13 +132,8 @@ class arduino_serial(arduino):
 		self.logger.warning("Reseteo arduino, respuesta: -"+str(respuesta))
 		return(respuesta)
 			
-	def setPinTo(self,pinToSet,power,pinPower):
-
-		comando = '{"comando":"setPinTo","pinToSet":'+str(pinToSet)+',"power":'+str(power)+',"pinToGetPower":'+str(pinPower)+'}\n'
-		salida = self.enviaComando(comando)
-		if salida:
-			self.pin[pinToSet].value=power
-		return salida
+	def setPin(self,nombre,valor):
+		return(self.enviaComando('{"command":"setPin", "dispositivo":"'+nombre+'", "valor":"'+valor+'"}'))
 
 #arduino conectado por MQTT	
 class arduino_MQTT(arduino):	
@@ -157,7 +152,7 @@ class arduino_MQTT(arduino):
 		return(True)
 	
 	def setPin(self,nombre,valor):
-		self.enviaComando('{"command":"setPin", "dispositivo":"'+nombre+'", "valor":"'+valor+'"}')
+		return(self.enviaComando('{"command":"setPin", "dispositivo":"'+nombre+'", "valor":"'+valor+'"}'))
 
 	def reset(self):
 		self.enviaComando('{"command":"reset"}')
@@ -179,7 +174,7 @@ class shelly(arduino):
 		return(True)
 	
 	def setPin(self, nombre, valor):
-		self.enviaComando('{"id":1, "src":"Shellys/'+nombre+'/respuestas", "method":"Switch.Set","params":{"id":0,"on":'+str(valor).lower()+'}}')
+		return(self.enviaComando('{"id":1, "src":"Shellys/'+nombre+'/respuestas", "method":"Switch.Set","params":{"id":0,"on":'+str(valor).lower()+'}}'))
 
 	def reset(self):
 		self.enviaComando('{"id":1, "method":"Shelly.Reboot"}')
