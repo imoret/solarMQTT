@@ -58,7 +58,8 @@ class arduino_serial(arduino):
 	def __init__(self,nombre,pto):
 		super().__init__(nombre)
 		self.pto=pto
-		self.puerto = self.creaPuerto(pto)	
+		self.puerto = self.creaPuerto(pto)
+		self.conexion = "serial"
 	
 	def creaPuerto(self, pto):
 		puerto = serial.Serial(pto, baudrate=9600, timeout=3.0)
@@ -140,6 +141,7 @@ class arduino_MQTT(arduino):
 	def __init__(self,nombre,broker_address):
 		super().__init__(nombre)
 		self.broker_address = broker_address
+		self.conexion = "MQTT"
 
 	def enviaComando(self,mensaje):
 		client = mqtt.Client("Solar")
@@ -157,11 +159,20 @@ class arduino_MQTT(arduino):
 	def reset(self):
 		self.enviaComando('{"command":"reset"}')
 
+	def subscribe(self, client):
+		client.subscribe("Arduinos/%s/event" % self.nombre)
+		client.subscribe("Arduinos/%s/online" % self.nombre)
+  
+	def setup(self, tipo, nombre, pin, pinPower):
+		msg = '{"command":"setup", "tipo":'+tipo+',"nombre":'+nombre+', "pin":'+pin+', "pinPower":'+pinPower+'}'
+		self.enviaComando(msg)
+
 class shelly(arduino):
 	def __init__(self, nombre, broker_address):
 		super().__init__(nombre)
 		self.broker_address = broker_address
 		delattr(self.pin)
+		self.conexion = "MQTT"
 
 	def enviaComando(self, mensaje):
 		client = mqtt.Client("Solar")
@@ -178,3 +189,8 @@ class shelly(arduino):
 
 	def reset(self):
 		self.enviaComando('{"id":1, "method":"Shelly.Reboot"}')
+  
+	def subscribe(self, client):
+		client.subscribe("Shellys/%s/status/switch:0" % self.nombre)
+		client.subscribe("Shellys/%s/online" % self.nombre)
+  

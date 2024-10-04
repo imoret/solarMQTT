@@ -16,17 +16,19 @@ class dispositivo:
 		self.powerAct = 0
 		self.ard = ardu
 		self.pin = pinconect
-		self.pinToGetPower = pinpower
+		self.pinPower = pinpower
 		self.minP = power*minPo/100
 		self.horasOn = hOn
 		self.horasOff = hOff
 		self.consumExcedente = consumirE
 		self.consumo = 0
+		self.online = True
 
 		self.tiempoDiario=tiempoAlDia*60
 		self.tiempoMaximo=tiempoMaximo*60
 		self.minTiempoSeguido = minTiempoSeguidoEnMarcha*60
 		self.setTiempoHoy(self.tiempoDiario, True)
+		self.horaEncendido = int(time.time())
 		self.horaCorte = horaC * 3600
 		self.emergencia = False
 		self.modoManual = False
@@ -35,9 +37,9 @@ class dispositivo:
 		self.semaforoCom = threading.Semaphore(1)
 
 		self.setPower(0)					#Inicializo apagado
-		self.kill_threads = False
+		global kill_threads
 
-		#Creo el logger del resistivo
+		#Creo el logger del dispositivo
 		self.logger = logging.getLogger(self.nombre)
 		self.logger.setLevel(logging.DEBUG)
 		fhd = logging.FileHandler('excedentes.log')
@@ -54,7 +56,7 @@ class dispositivo:
 	
 	def threadDiario(self):
 
-		while not self.kill_threads:
+		while not kill_threads:
 			h=datetime.now().hour*3600+datetime.now().minute*60+datetime.now().second		
 			if (h<self.horaCorte):
 				dormir = self.horaCorte-h
@@ -127,3 +129,24 @@ class dispositivo:
 			self.logger.error("No es posible bloquear el archivo excedentes.conf.lock")
 		except:
 			self.logger.error("No es posible cargar la nueva configuracion")
+   
+	def subscribe(self, client):
+		if self.ard.conexion == "MQTT":
+			client.subscribe("Dispositivos/%s/status" % self.nombre)
+   
+	def setup(self):
+		self.ard.setup(self.tipo, self.nombre, self.pin, self.pinPower)
+
+	def setStatus(self,powerAct, consumo):
+		if self.powerAct != powerAct:
+			self.setTiempoHoy(self.get_tiempo_hoy())
+			t=int(time.time())
+			self.horaEncendido = t
+			self.powerAct = powerAct
+		self.consumo = consumo
+
+	def get_tiempo_hoy(self):
+		t=int(time.time())
+		p = self.powerAct/255 # Tanto por 100 de la potencia
+		th = (self.tiempoHoy - (t - self.horaEncendido) * p)
+		return(th)
