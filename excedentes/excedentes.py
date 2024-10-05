@@ -226,7 +226,7 @@ class instalacion:
         lcdLin=1
         lcdPos=0
         self.update()
-        self.dispositivos.sort(key=get_tiempo_hoy, reverse=True) if (self.excedente - self.disponible_dispositivos(0)) < 0 else self.capacitativos.sort(key=get_tiempo_hoy, reverse=False) #Reordeno los capacitativos para que se encienda/apague el que lleve menos/mas tiempo
+        self.dispositivos.sort(key=get_tiempo_hoy, reverse=True) if self.excedente < 0 else self.capacitativos.sort(key=get_tiempo_hoy, reverse=False) #Reordeno los capacitativos para que se encienda/apague el que lleve menos/mas tiempo
         i = 0
         for d in self.dispositivos:
             ''' 
@@ -249,31 +249,42 @@ class instalacion:
             elif (d.tiempoHoy+tiempo >= d.horaCorte and tiempo < d.horaCorte):	#Si se acaba el tiempo para la programacion diaria
                 E = 255
             elif (d.consumirExcedente) or (d.tiempoHoy > 0):											#Si hay que consumir escedentes
-                if disponible <= -(d.power-(d.minPower/2)) :		#Si hay disponible suficiente enciendo 
+                if disponible <= -(d.power-(d.minP/2)) :		#Si hay disponible suficiente enciendo 
                     E = 255
-                elif (disponible <= d.minPower and d.encendido): #Si consumo por debajo del minimo y ya estoy encendido sigo encendido
+                elif (disponible <= d.minP and d.powerAct > 0): #Si consumo por debajo del minimo y ya estoy encendido sigo encendido
                     E = 255
                 else:												#Si estoy consumiendo paro
                     E = 0
             else:
                 E = 0									#Si no hay que repartir execentes, paro
             
-            if d.tipo == "capacitativo" and d.powerAct != E:    # Si es un capacitativo lo enciendo o apago y he acabado, si no miro si le vario la potencia
-                d.setPower(E)
+            if d.tipo == "capacitativo" and d.powerAct != E and d.setPower(E):              # Si es un capacitativo
+                #Lo muestro en la LCD                                                       # La potencia cambia
+                lcdDatos=str(d.nombre+":"+str("ON" if d.powerAct != 0 else "OFF")+" ")      # Y se realiza el cambio
+                if (lcdLin<=3):                                                             # Lo muestro en la LCD y termino
+                    try:
+                        self.lcd.cursor_pos = (lcdLin, lcdPos)
+                        self.lcd.write_string(lcdDatos)
+                    except:
+                        self.resetLCD()
+                if lcdPos==10: lcdLin+=1
+                lcdPos = 0 if (lcdPos==10) else 10
+                
                 time.sleep(0.5)
+                break
 
             if d.tipo == "resistivo":
                 if (d.consumirExcedente) or (d.tiempoHoy > 0):
-                    if disponible < -(d.maxP) :					#Si voy sobrado me pongo a tope
+                    if disponible < -(d.power) :					#Si voy sobrado me pongo a tope
                         E = 255
                     elif disponible <= -(d.minP/2):					#Si me sobra por encima de minimo, sumo un 20% del sobrante
-                        E = d.power+int(-disponible*2/100)
+                        E = d.powerAct+int(-disponible*2/100)
                         if E<50:E=50											#Me aseguro de empezar por encima del minimo
                     elif -(d.minP/4) > disponible > -(d.minP/2):  				#Si me sobra entre minP y minP/2 sumo 1
-                        E = d.power+1
+                        E = d.powerAct+1
                     elif 0 >= disponible >= -(d.minP/4):					#Si sobra entre 0 y minP/4 inyecto el excedente a la red
-                        E = d.power
-                    elif d.maxP > disponible > 0:				#Si estoy consumiendo bajo el cosumo
+                        E = d.powerAct
+                    elif d.power > disponible > 0:				#Si estoy consumiendo bajo el cosumo
                         E = d.power-int(disponible*2/100)
                     else:														# En otro caso (Consumo mas del maximo) pongo a 0
                         E=0
@@ -284,28 +295,66 @@ class instalacion:
                 if p>255: p=255			#Si paso el maximo limito
                 if p<50: p=0			#Si no llego al minimo apago
                 
-                if d.powerAct != E:
-                    d.setPower(E)
+                if d.powerAct != E and d.setPower(E):   # Si hay cambio y se produce el cambio
+                    #Lo muestro en la LCD	
+                    lcdDatos=str(d.nombre+":"+str(int(p*0.392156863))+"% ") #Multiplico para calcular el %
+                    if (lcdLin<=3):
+                        try:
+                            self.lcd.cursor_pos = (lcdLin, lcdPos)
+                            self.lcd.write_string(lcdDatos)
+                        except:
+                            self.resetLCD()
+                    if lcdPos==10: lcdLin+=1
+                    lcdPos = 0 if (lcdPos==10) else 10
+                    
                     time.sleep(0.5)
+                    break
             
             self.update()
             
-            #Lo muestro en la LCD	
-            lcdDatos=str(i.nombre+":"+str(int(p*0.392156863))+"% ") #Multiplico para calcular el %
-            if (lcdLin<=3):
-                try:
-                    self.lcd.cursor_pos = (lcdLin, lcdPos)
-                    self.lcd.write_string(lcdDatos)
-                except:
-                    self.resetLCD()
-            if lcdPos==10: lcdLin+=1
-            lcdPos = 0 if (lcdPos==10) else 10
+    def paradaEmergencia(self, logText = "PARADA DE EMERGENCIA Superado maximo KWs permitidos ", espera=60):
+        self.logger.warning(str(logText)+" "+str(int(self.inversor.excedente))+" de "+str(int(self.maxRed)))
+        while True:	#do while bucle
+            for d in self.dispositivos:
+                d.emergencia = True
+                d.setPower(0)
+            try:
+                self.lcd.backlight_enabled = True
+                self.lcdLuz=True
+                self.lcd.clear()
+                self.lcd.cursor_pos = (1,5)
+                self.lcd.write_string("PARADA  DE")
+                self.lcd.cursor_pos = (2,5)
+                self.lcd.write_string("EMERGENCIA")
+            except:
+                self.resetLCD()
+            time.sleep(10)
+            self.update()			
+            if self.excedente < self.maxRed: #¢ondicion de salida
+                break
+				
+        for i in range(1, espera+1):
+            try:
+                self.lcd.clear()
+                self.lcd.cursor_pos = (0,0)
+                self.lcd.write_string("PARADA DE EMERGENCIA")
+                self.lcd.cursor_pos = (1,0)
+                self.lcd.write_string("Reactivacion en ")
+                self.lcd.cursor_pos = (2,5)
+                self.lcd.write_string(str(espera+1-i)+" segundos")
+            except:
+                self.resetLCD()
+            time.sleep(1)
+        for d in self.dispositivos:
+            d.emergencia = False
+        self.update()
+        self.logger.warning("PARADA DE EMERGENCIA TERMINADA: "+str(int(self.inversor.excedente))+" de "+str(int(self.maxRed)))      
         
 ########### ctrl+c cierra el programa ############	
 def salidaAlegre(signal_received, frame):
 	global kill_threads
 	kill_threads = True
-	time.sleep(15)
+	time.sleep(5)
 	print('SIGINT o CTRL-C detectado. Saliendo alegremente')
 	logger = logging.getLogger('main')
 	logger.setLevel(logging.DEBUG)
@@ -321,28 +370,27 @@ def salidaAlegre(signal_received, frame):
 ########### MAIN ############
 def principal():
 	# Tell Python to run the handler() function when SIGINT is recieved
-	signal(SIGINT, salidaAlegre)
-	global kill_threads
+    signal(SIGINT, salidaAlegre)
+    global kill_threads
 	
-	logger = logging.getLogger('main')
-	logger.setLevel(logging.DEBUG)
-	fh = logging.FileHandler('excedentes.log')
-	fh.setLevel(logging.DEBUG)
-	logger.addHandler(fh)
-	formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-	fh.setFormatter(formatter)
-	logger.addHandler(fh)
-	logger.info('Inciando programa')
+    logger = logging.getLogger('main')
+    logger.setLevel(logging.DEBUG)
+    fh = logging.FileHandler('excedentes.log')
+    fh.setLevel(logging.DEBUG)
+    logger.addHandler(fh)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+    logger.info('Inciando programa')
 	
-	nuevaConf = False 
-	casa = instalacion()
-	while not kill_threads:
-		if casa.inversor.excedente > casa.maxRed:
-			casa.paradaEmergencia()
-		else:	
-			#casa.termopea()
-			casa.repartir()
-		#time.sleep(0.1)
+	# nuevaConf = False 
+    casa = instalacion()
+    while not kill_threads:
+        if casa.excedente > casa.maxRed:
+            casa.paradaEmergencia()
+        else:
+            casa.repartir()
+    '''            
 		lock = FileLock("excedentes.conf.lock")
 		with lock:
 			with open('excedentes.conf') as fileConf:
@@ -357,8 +405,9 @@ def principal():
 				with open('excedentes.conf','w') as fileConf:
 					conf['nuevaConf'] = False
 					json.dump(conf, fileConf, indent=4)
-	casa.mqtt_client.disconnect()
-	casa.paradaEmergencia("SALIENDO",10)
+    '''
+    casa.mqtt_client.disconnect()
+    casa.paradaEmergencia("SALIENDO",10)
 	
 
 		
