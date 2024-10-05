@@ -6,8 +6,6 @@ import json
 from filelock import Timeout, FileLock
 import paho.mqtt.client as mqtt #import the client1
 
-
-
 class dispositivo:
 	def __init__(self, tipo, nombre, power, ardu, pinconect, pinpower, hOn, hOff, consumirE, tiempoAlDia=3600,tiempoMaximo=0, minTiempoSeguidoEnMarcha=10, horaC=12, minPo=20):
 		self.tipo = tipo
@@ -72,9 +70,9 @@ class dispositivo:
 	def setPower(self,valor):
 		with self.semaforoCom:	#Activo el semaforo para evitar concurrencias en el apagado
 			t=int(time.time())
-			if (self.horaEncendido+self.minTiempoSeguido < t) or (self.emergencia):
-				self.ard.setpin(self.nombre, valor)
-				return(True)						
+			if (self.horaEncendido+self.minTiempoSeguido < t) or (self.emergencia) or self.powerAct < valor:  	# Acepta si: 	- ha pasado el tiempo minimo de encendido
+				self.ard.setpin(self.nombre, valor)																#				- Es una emergencia			
+				return(True)																					#				- Es un aumento de potencia
 			else:
 				return False
 
