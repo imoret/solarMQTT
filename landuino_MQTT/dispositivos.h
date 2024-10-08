@@ -2,6 +2,8 @@ class dispositivo
 {
 public:
     String nombre;
+    String topicOnline;
+    String topicStatus;
 
     dispositivo(int p, int pPower, String n);
     String status();

@@ -57,6 +57,6 @@ class fronius:
 		self.update()
 		return(self.produccion)
 		
-	def getExcendente(self):
+	def getExcedente(self):
 		self.update()
 		return(self.excedente)
