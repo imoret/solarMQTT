@@ -1,3 +1,21 @@
 
 /.vscode
 /excedentes_old
+/excedentes/excedentes.conf.lock
+/excedentes/excedentes.log
+/excedentes/H2.conf.lock
+/excedentes/Pozo.conf.lock
+/excedentes/excedentes (copia).conf
+/excedentes/H1.conf
+/excedentes/H1.conf.lock
+/excedentes/H2.conf
+/excedentes/H3.conf
+/excedentes/H3.conf.lock
+/excedentes/H4.conf
+/excedentes/H4.conf.lock
+/excedentes/led.conf
+/excedentes/led.conf.lock
+/excedentes/Pozo.conf
+/excedentes/termo.conf
+/excedentes/termo.conf.lock
+/excedentes/__pycache__

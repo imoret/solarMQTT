@@ -1,6 +1,7 @@
 import json
 import logging
 import threading
+import operator
 from dispositivo import dispositivo
 from arduino import arduino_serial, arduino_MQTT, shelly
 from inversor import fronius
@@ -12,23 +13,25 @@ from datetime import datetime
 import paho.mqtt.client as mqtt #import the client1
 from RPLCD import i2c
 
+kill_threads = False
+
 class instalacion:
     def __init__(self):
         global kill_threads
         
-        self.inversores = []
-        self.arduinos = []
-        self.dispositivos = []
+        self.inversores = {}
+        self.arduinos = {}
+        self.dispositivos = {}
         
         self.produccion = 0
         self.excedente = 0
         
         #Creo la LCD
         self.lcdLuz=True
-        self.creaLCD() 
+        self.lcd = self.creaLCD() 
         
-		#Creo el logger del domus
-        self.logger = logging.getLogger('domus')
+		#Creo el logger de la instalacion
+        self.logger = logging.getLogger('instalacion')
         self.logger.setLevel(logging.DEBUG)
         fhd = logging.FileHandler('excedentes.log')
         fhd.setLevel(logging.DEBUG)
@@ -47,7 +50,7 @@ class instalacion:
 				
                 #Preparo el MQTT
                 self.broker_address = conf['data']['broker_address']
-                self.mqtt_client = mqtt.Client("solarOptimum")
+                self.mqtt_client = mqtt.Client("solar_MQTT")
                 self.mqtt_client.on_message = self.on_message 
                 self.mqtt_client.on_connect = self.on_connect
                 self.mqtt_client.on_disconnect = self.on_disconnect
@@ -56,29 +59,36 @@ class instalacion:
                 self.logger.info("Inicio conexion al servidor MQTT")
                 self.mqtt_client.connect(self.broker_address)
                 
+                self.logger.info("Cargando inversores")
                 for i in conf['inversores']:				#Lo recorro pero se que solo hay uno
                     aux = fronius(i['nombre'],i['ip'])
                     self.inversores[i['nombre']] = aux
                     
+                self.logger.info("Cargando arduinos serial")
                 for a in conf['arduinos_serial']:
                     aux=arduino_serial(a['nombre'],a['puerto'])
                     self.arduinos[a['nombre']]=aux
-                    
+
+                self.logger.info("Cargando arduinos MQTT")   
                 for l in conf['arduinos_MQTT']:
                     aux=arduino_MQTT(l['nombre'],self.broker_address)
                     self.arduinos[l['nombre']]=aux
                     self.arduinos[l['nombre']].subscribe(self.mqtt_client)
                     
+                self.logger.info("Cargando Shellys")
                 for s in conf['shellys']:
                     aux=shelly(s['nombre'],self.broker_address)
                     self.arduinos[s['nombre']]=aux
-                    self.arduinos[l['nombre']].subscribe(self.mqtt_client)
+                    self.arduinos[s['nombre']].subscribe(self.mqtt_client)
                 
+                self.logger.info("Cargando dispositivos")
                 for d in conf['dispositivos']:
                     tipo = d['tipo']
                     nombre = d['nombre']
                     power = d['power']
-                    pinPower = d['pinToGetPower']
+                    ardu = self.arduinos[d['ardu']]
+                    pin = d['pin']
+                    pinPower = d['pinPower']
                     t_on = d["modos"][d['modoDia'][datetime.today().weekday()]]["timeOn"]
                     t_off = d["modos"][d['modoDia'][datetime.today().weekday()]]["timeOff"]
                     consumirE = d["modos"][d['modoDia'][datetime.today().weekday()]]["consumirExcedente"]
@@ -87,13 +97,21 @@ class instalacion:
                     tiempo_seguido = d["modos"][d['modoDia'][datetime.today().weekday()]]["tiempoSeguido"]
                     hora_corte = d["modos"][d['modoDia'][datetime.today().weekday()]]["horaCorte"]
                     minPo = d['minPo']
-                    aux = dispositivo(tipo, nombre, power, pinPower, t_on, t_off, consumirE, tiempo_al_dia, tiempo_maximo, tiempo_seguido, hora_corte, minPo)
+                    aux = dispositivo(tipo, nombre, power, ardu, pin, pinPower, t_on, t_off, consumirE, tiempo_al_dia, tiempo_maximo, tiempo_seguido, hora_corte, minPo)
                     self.dispositivos[d['nombre']] = aux
                     self.dispositivos[d['nombre']].subscribe(self.mqtt_client)
                     
+                #Reinicio los arduinos
+                for a in self.arduinos.values():
+                    a.reset()
+        #Creo un hilo que actualiza la produccion/excedente
+        self.update_control = threading.Thread(target=self.update)
+        self.update_control.daemon = True
+        self.update_control.start()
+        
         #Creo un hilo que gestiona las conexiones MQTT.
         self.mqtt_control = threading.Thread(target=self.thread_mqtt)
-        self.mqtt_control.setDaemon(True)
+        self.mqtt_control.daemon = True
         self.mqtt_control.start()
         
     def creaLCD(self):
@@ -111,11 +129,21 @@ class instalacion:
 
 		# Initialise the LCD
         try:
-            self.lcd = i2c.CharLCD(i2c_expander, address, port=port, charmap=charmap,cols=cols, rows=rows)
-            self.lcd.backlight_enabled = self.lcdLuz
+            lcd = i2c.CharLCD(i2c_expander, address, port=port, charmap=charmap,cols=cols, rows=rows)
+            lcd.backlight_enabled = self.lcdLuz
+            return(lcd)
+        except:
+            #print("No hay una LCD!!")
+            #self.logger.error("No ha una lcd presente")
+            return(False)
+
+    def resetLCD(self):
+        try:
+            del self.lcd
         except:
             pass
-        
+        self.creaLCD()	
+
     def thread_mqtt(self):
         while not kill_threads:
             self.logger.info("Inicio el loop_forever MQTT")
@@ -145,6 +173,9 @@ class instalacion:
         destino = message.topic.split('/')[0]
         nombre=message.topic.split('/')[1]
         canal=message.topic.split('/')[2]
+
+        #self.logger.info(decoded_message)
+        
 		
         #Si recibo un online
         if canal == "online":
@@ -160,83 +191,97 @@ class instalacion:
             if destino == "Arduinos":
                 msg=json.loads(decoded_message)
                 if msg['event'] == 'init':
-                    for d in self.dispositivos:
-                        if d.nombre == nombre:
+                    #self.logger.info("Mensaje recibido: %s" % decoded_message)
+                    a = self.arduinos[nombre]
+                    #self.logger.info("Orden setup para %s" % nombre)
+                    for d in self.dispositivos.values():
+                        if a.nombre == d.ard.nombre:
+                            self.logger.info("Orden setup para %s" % d.nombre)
                             d.setup()
             if destino == "Dispositivos":
                 pass
         
         #Si recibo un status    
         if canal == "status":
+            msg=json.loads(decoded_message)
+
             if destino == "Shellys":
-                msg=json.loads(decoded_message)
-                for d in self.dispositivos:
-                    if d.ard == nombre:
-                        d.powerAct = True if str(msg["output"]) == 'True' else False
-                        d.consumo = msg["apower"]
-                        if (msg["source"] != 'init' and msg["source"] != 'MQTT' and d.modoManual == False):
-                            d.logger.info("Puesto en modo manual");
-                            d.modoManual = True
-                        if ((msg["source"] == 'init' or msg["source"] == 'MQTT') and d.modoManual == True): 
-                            d.logger.info("Puesto en modo automatico");
-                            d.modoManual = False 
-            if destino == "dispositivos":
+                d = self.dispositivos[nombre]
+                #self.logger.info("%s -> %s" %(nombre, d.nombre))
+                d.powerAct = 255 if str(msg["output"]) == 'True' else 0
+                d.consumo = msg["apower"]
+                if (msg["source"] != 'init' and msg["source"] != 'MQTT' and d.modoManual == False):
+                    #d.logger.info("Puesto en modo manual");
+                    d.modoManual = True
+                if ((msg["source"] == 'init' or msg["source"] == 'MQTT') and d.modoManual == True): 
+                    #d.logger.info("Puesto en modo automatico");
+                    d.modoManual = False
+
+            if destino == "Dispositivos":
                 self.dispositivos[nombre].setStatus(msg['estado'], msg['consumo'])
+
             if destino == "Arduinos":
                 pass
     
     def update(self):
-        e = 0
-        p = 0
-        for i in self.inversores:
-            e += i.getExcedente()
-            p += i.getProduccion()
-        self.excedente = e
-        self.produccion = p
-        
-        try:
-            self.lcd.cursor_pos = (0, 0)
-            self.lcd.write_string("                    ")
-            self.lcd.cursor_pos = (0, 0)
-            self.lcd.write_string("P:%s E:%s C:%s" % (str(int(self.inversor.produccion)),str(int(self.inversor.excedente)),str(int(self.inversor.produccion+self.inversor.excedente))))
-        except:
-            self.resetLCD()
+        while not kill_threads:
+            e = 0
+            p = 0
+            for i in self.inversores.values():
+                e += i.getExcedente()
+                p += i.getProduccion()
+            self.excedente = e
+            self.produccion = p
+            
+            try:
+                self.lcd.cursor_pos = (0, 0)
+                self.lcd.write_string("                    ")
+                self.lcd.cursor_pos = (0, 0)
+                self.lcd.write_string("P:%s E:%s C:%s" % (str(int(self.inversor.produccion)),str(int(self.inversor.excedente)),str(int(self.inversor.produccion+self.inversor.excedente))))
+            except:
+                self.resetLCD()
 
-        if (self.inversor.produccion>100 and self.lcdLuz == False):
-            self.lcd.backlight_enabled = True
-            self.lcdLuz=True
-            self.logger.info("Las placas empiezan a producir. Encender LCD")
-        if (self.inversor.produccion<=0 and self.lcdLuz == True):
-            self.lcd.backlight_enabled = False
-            self.lcdLuz=False
-            self.logger.info("Las placas dejan de producir. Apagar LCD")
+            try:
+                if (self.produccion>100 and self.lcdLuz == False):
+                    self.lcd.backlight_enabled = True
+                    self.lcdLuz=True
+                    self.logger.info("Las placas empiezan a producir. Encender LCD")
+                if (self.produccion<=0 and self.lcdLuz == True):
+                    self.lcd.backlight_enabled = False
+                    self.lcdLuz=False
+                    self.logger.info("Las placas dejan de producir. Apagar LCD")
+            except:
+                pass
+
+            time.sleep(0.5)
         
     def disponible_dispositivos(self, i):
+        copy_dispositivos = dict(sorted(self.dispositivos.items(), key=lambda dis: dis[1].get_tiempo_hoy()))    # Ordeno siempre en ascendente
+        copy_dispositivos = dict(list(copy_dispositivos.items())[:i+1])                                         # corto desde la posicion dada + 1
         t=int(time.time())
         hora=datetime.now().hour
         tiempo = datetime.now().hour*3600+datetime.now().minute*60+datetime.now().second
         disp = 0
-        for d in range(i, len(self.dispositivos)):
+        for d in copy_dispositivos.values():
             if d.pinPower >= 0 and d.powerAct > 0 and not d.modoManual and hora not in d.horasOn and not (d.tiempoHoy+tiempo >= d.horaCorte and tiempo < d.horaCorte) and (d.horaEncendido + d.minTiempoSeguido < t):
                 disp += d.consumo
         return(disp)
         
     def repartir(self):
-        algunCambio = 0
         lcdLin=1
         lcdPos=0
-        self.update()
-        self.dispositivos.sort(key=get_tiempo_hoy, reverse=True) if self.excedente < 0 else self.capacitativos.sort(key=get_tiempo_hoy, reverse=False) #Reordeno los capacitativos para que se encienda/apague el que lleve menos/mas tiempo
+        self.dispositivos = dict(sorted(self.dispositivos.items(), key=lambda dis: dis[1].get_tiempo_hoy(), reverse=(self.excedente < 0)))
         i = 0
-        for d in self.dispositivos:
+        for d in self.dispositivos.values():
             ''' 
 			Si hay varios dispositivos encendidos "cediendo" su consumo el disponible puede ser positivo cuando en realidad estoy consumiendo
 			Si el dispositivo esta apagado intentara "robar" a los de menos prioridad.
 			'''
+            #self.logger.info("Reparto %s" % d.nombre)
             disponible = self.excedente - self.disponible_dispositivos(i) if d.powerAct == 0 else self.excedente
             i+=1
             t=int(time.time())
-            th = (d.tiempoHoy - t + d.horaEncendido) if d.encendido else d.tiempoHoy
+            th = (d.tiempoHoy - t + d.horaEncendido) if d.powerAct > 0 else d.tiempoHoy
             hora=datetime.now().hour
             tiempo = datetime.now().hour*3600+datetime.now().minute*60+datetime.now().second  #segundos trascurridos hoy
             
@@ -248,33 +293,15 @@ class instalacion:
                 E = 0
             elif (d.tiempoHoy+tiempo >= d.horaCorte and tiempo < d.horaCorte):	#Si se acaba el tiempo para la programacion diaria
                 E = 255
-            elif (d.consumirExcedente) or (d.tiempoHoy > 0):											#Si hay que consumir escedentes
-                if disponible <= -(d.power-(d.minP/2)) :		#Si hay disponible suficiente enciendo 
-                    E = 255
-                elif (disponible <= d.minP and d.powerAct > 0): #Si consumo por debajo del minimo y ya estoy encendido sigo encendido
-                    E = 255
-                else:												#Si estoy consumiendo paro
-                    E = 0
-            else:
-                E = 0									#Si no hay que repartir execentes, paro
-            
-            if d.tipo == "capacitativo" and d.powerAct != E and d.setPower(E):              # Si es un capacitativo
-                #Lo muestro en la LCD                                                       # La potencia cambia
-                lcdDatos=str(d.nombre+":"+str("ON" if d.powerAct != 0 else "OFF")+" ")      # Y se realiza el cambio
-                if (lcdLin<=3):                                                             # Lo muestro en la LCD y termino
-                    try:
-                        self.lcd.cursor_pos = (lcdLin, lcdPos)
-                        self.lcd.write_string(lcdDatos)
-                    except:
-                        self.resetLCD()
-                if lcdPos==10: lcdLin+=1
-                lcdPos = 0 if (lcdPos==10) else 10
-                
-                time.sleep(0.5)
-                break
-
-            if d.tipo == "resistivo":
-                if (d.consumirExcedente) or (d.tiempoHoy > 0):
+            elif (d.consumExcedente) or (d.tiempoHoy > 0):			#Si hay que consumir escedentes
+                if d.tipo =="capacitativo":
+                    if disponible <= -(d.power-(d.minP/2)) :		#Si hay disponible suficiente enciendo 
+                        E = 255
+                    elif (disponible <= d.minP and d.powerAct > 0): #Si consumo por debajo del minimo y ya estoy encendido sigo encendido
+                        E = 255
+                    else:												#Si estoy consumiendo paro
+                        E = 0
+                if d.tipo == "resistivo":
                     if disponible < -(d.power) :					#Si voy sobrado me pongo a tope
                         E = 255
                     elif disponible <= -(d.minP/2):					#Si me sobra por encima de minimo, sumo un 20% del sobrante
@@ -288,16 +315,12 @@ class instalacion:
                         E = d.power-int(disponible*2/100)
                     else:														# En otro caso (Consumo mas del maximo) pongo a 0
                         E=0
-                else:															#Si no es la hora y no hay que consumir me pongo a 0
-                    E = 0
-                
-                #Corrijo maximos y minimos
-                if p>255: p=255			#Si paso el maximo limito
-                if p<50: p=0			#Si no llego al minimo apago
-                
-                if d.powerAct != E and d.setPower(E):   # Si hay cambio y se produce el cambio
-                    #Lo muestro en la LCD	
-                    lcdDatos=str(d.nombre+":"+str(int(p*0.392156863))+"% ") #Multiplico para calcular el %
+            else:
+                E = 0									#Si no hay que repartir execentes, paro
+            
+            if d.powerAct != E:
+                if d.setPower(E):              # Si ha habido cambios y se aceptan lo muestro en la LCD
+                    lcdDatos=str(d.nombre+":"+str("ON" if d.powerAct != 0 else "OFF")+" ") 
                     if (lcdLin<=3):
                         try:
                             self.lcd.cursor_pos = (lcdLin, lcdPos)
@@ -310,12 +333,10 @@ class instalacion:
                     time.sleep(0.5)
                     break
             
-            self.update()
-            
     def paradaEmergencia(self, logText = "PARADA DE EMERGENCIA Superado maximo KWs permitidos ", espera=60):
-        self.logger.warning(str(logText)+" "+str(int(self.inversor.excedente))+" de "+str(int(self.maxRed)))
+        self.logger.warning(str(logText)+" "+str(int(self.excedente))+" de "+str(int(self.maxRed)))
         while True:	#do while bucle
-            for d in self.dispositivos:
+            for d in self.dispositivos.values():
                 d.emergencia = True
                 d.setPower(0)
             try:
@@ -328,8 +349,7 @@ class instalacion:
                 self.lcd.write_string("EMERGENCIA")
             except:
                 self.resetLCD()
-            time.sleep(10)
-            self.update()			
+            time.sleep(10)		
             if self.excedente < self.maxRed: #¢ondicion de salida
                 break
 				
@@ -345,10 +365,9 @@ class instalacion:
             except:
                 self.resetLCD()
             time.sleep(1)
-        for d in self.dispositivos:
+        for d in self.dispositivos.values():
             d.emergencia = False
-        self.update()
-        self.logger.warning("PARADA DE EMERGENCIA TERMINADA: "+str(int(self.inversor.excedente))+" de "+str(int(self.maxRed)))      
+        self.logger.warning("PARADA DE EMERGENCIA TERMINADA: "+str(int(self.excedente))+" de "+str(int(self.maxRed)))      
         
 ########### ctrl+c cierra el programa ############	
 def salidaAlegre(signal_received, frame):
@@ -406,6 +425,10 @@ def principal():
 					conf['nuevaConf'] = False
 					json.dump(conf, fileConf, indent=4)
     '''
+    for d in casa.dispositivos.values():
+        d.kill_threads = True
+    for a in casa.arduinos.values():
+        a.kill_threads = True
     casa.mqtt_client.disconnect()
     casa.paradaEmergencia("SALIENDO",10)
 	

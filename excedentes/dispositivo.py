@@ -35,7 +35,7 @@ class dispositivo:
 		self.semaforoCom = threading.Semaphore(1)
 
 		self.setPower(0)					#Inicializo apagado
-		global kill_threads
+		self.kill_threads = False
 
 		#Creo el logger del dispositivo
 		self.logger = logging.getLogger(self.nombre)
@@ -53,28 +53,31 @@ class dispositivo:
 		self.r.start()
 	
 	def threadDiario(self):
-
-		while not kill_threads:
+		while not self.kill_threads:
 			h=datetime.now().hour*3600+datetime.now().minute*60+datetime.now().second		
 			if (h<self.horaCorte):
 				dormir = self.horaCorte-h
 			else:
 				dormir = self.horaCorte+(86400-h)
 			#self.logger.info("Son las: "+str(h)+" HoraCorte es: "+str(self.horaCorte)+" Faltan: "+str(dormir))
-			time.sleep(dormir)
+			for i in range(0, dormir):
+				time.sleep(1)
+				if self.kill_threads:
+					break
 			self.nuevaConf()
 			self.resetea()
 			
 		self.logger.info("Matando hilo diario {}".format(self.nombre))
-
-	def setPower(self,valor):
+	
+	def setPower(self, valor):
 		with self.semaforoCom:	#Activo el semaforo para evitar concurrencias en el apagado
 			t=int(time.time())
 			if (self.horaEncendido+self.minTiempoSeguido < t) or (self.emergencia) or self.powerAct < valor:  	# Acepta si: 	- ha pasado el tiempo minimo de encendido
-				self.ard.setpin(self.nombre, valor)																#				- Es una emergencia			
+				self.logger.info("Setpower de %s a %s" % (self.nombre, valor))
+				self.ard.setPin(self.nombre, valor)																#				- Es una emergencia			
 				return(True)																					#				- Es un aumento de potencia
 			else:
-				return False
+				return(False)
 
 	def resetea(self):
 		if self.encendido:
@@ -94,7 +97,8 @@ class dispositivo:
 						conf = json.load(fileConf)
 						newTiempo = conf['tiempoHoy']
 				except:
-					self.logger.error("No se ha podido abrir el archivo "+str(fileName))
+					print("No se ha podido abrir el archivo "+str(fileName))
+					#self.logger.error("No se ha podido abrir el archivo "+str(fileName))
 			with open(str(fileName),'w') as fileConf:
 				conf = {}
 				conf['tiempoHoy'] = newTiempo
@@ -108,29 +112,33 @@ class dispositivo:
 		lock = FileLock("excedentes.conf.lock", timeout=10)
 		try:
 			with lock:
+				self.logger.info("lock")
 				with open('excedentes.conf') as fileConf:
+					self.logger.info("with")
 					conf = json.load(fileConf)
-					for c in conf['capacitativos']:
-						if c["nombre"]==self.nombre:
+					for d in conf['dispositivos']:
+						if d["nombre"]==self.nombre:
 							dias_semana=["lunes","martes","miercoles","jueves","viernes","sabado","domingo"]
-							self.horasOn = c["modos"][c['modoDia'][dia]]["timeOn"]
-							self.horasOff = c["modos"][c['modoDia'][dia]]["timeOff"]
-							self.consumirExcedente = c["modos"][c['modoDia'][dia]]['consumirExcedente']
-							self.tiempoDiario = c["modos"][c['modoDia'][dia]]['tiempoAldia'] * 60
-							self.minTiempoSeguido = c["modos"][c['modoDia'][dia]]['tiempoSeguido'] * 60
-							self.tiempoMaximo = c["modos"][c['modoDia'][dia]]["tiempoMaximo"] * 60
+							self.horasOn = d["modos"][d['modoDia'][dia]]["timeOn"]
+							self.horasOff = d["modos"][d['modoDia'][dia]]["timeOff"]
+							self.consumExcedente = d["modos"][d['modoDia'][dia]]['consumirExcedente']
+							self.tiempoDiario = d["modos"][d['modoDia'][dia]]['tiempoAldia'] * 60
+							self.minTiempoSeguido = d["modos"][d['modoDia'][dia]]['tiempoSeguido'] * 60
+							self.tiempoMaximo = d["modos"][d['modoDia'][dia]]["tiempoMaximo"] * 60
 							self.setTiempoHoy(self.tiempoDiario)
-							self.horaCorte = c["modos"][c['modoDia'][dia]]['horaCorte'] * 3600
+							self.horaCorte = d["modos"][d['modoDia'][dia]]['horaCorte'] * 3600
 							self.modoManual = False
-							self.logger.info("Cargada configuracion para el "+dias_semana[dia]+": "+str(c['modoDia'][dia]))
-		except lock.Timeout:
-			self.logger.error("No es posible bloquear el archivo excedentes.conf.lock")
-		except:
+							self.minP = d['minPo']
+							self.logger.info("Cargada configuracion para el "+dias_semana[dia]+": "+str(d['modoDia'][dia]))
+		except Exception as e:
 			self.logger.error("No es posible cargar la nueva configuracion")
+			self.logger.error(e)
    
 	def subscribe(self, client):
 		if self.ard.conexion == "MQTT":
+			#self.logger.info("Suscripcion a: Dispositivos/%s/status" % self.nombre)
 			client.subscribe("Dispositivos/%s/status" % self.nombre)
+			client.subscribe("Dispositivos/%s/online" % self.nombre)
    
 	def setup(self):
 		self.ard.setup(self.tipo, self.nombre, self.pin, self.pinPower)

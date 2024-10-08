@@ -59,6 +59,7 @@ class arduino_serial(arduino):
 		super().__init__(nombre)
 		self.pto=pto
 		self.puerto = self.creaPuerto(pto)
+		self.semaforoCom = threading.Semaphore(1)	#Semaforo para maniobrar el arduino
 		self.conexion = "serial"
 	
 	def creaPuerto(self, pto):
@@ -134,7 +135,7 @@ class arduino_serial(arduino):
 		return(respuesta)
 			
 	def setPin(self,nombre,valor):
-		return(self.enviaComando('{"command":"setPin", "dispositivo":"'+nombre+'", "valor":"'+valor+'"}'))
+		return(self.enviaComando('{"command":"setPin", "dispositivo":"'+nombre+'", "valor":"'+str(valor)+'"}'))
 
 #arduino conectado por MQTT	
 class arduino_MQTT(arduino):	
@@ -148,15 +149,16 @@ class arduino_MQTT(arduino):
 		#client.on_connect = self.on_connect
 		client.connect(self.broker_address)
 
-		topic='Arduino/'+self.nombre+'/command'
+		topic='Arduinos/'+self.nombre+'/command'
 		client.publish(topic,mensaje)
 		client.disconnect()
 		return(True)
 	
 	def setPin(self,nombre,valor):
-		return(self.enviaComando('{"command":"setPin", "dispositivo":"'+nombre+'", "valor":"'+valor+'"}'))
+		return(self.enviaComando('{"command":"setPin", "dispositivo":"'+nombre+'", "valor":"'+str(valor)+'"}'))
 
 	def reset(self):
+		self.logger.info("Reseteando...")
 		self.enviaComando('{"command":"reset"}')
 
 	def subscribe(self, client):
@@ -164,14 +166,15 @@ class arduino_MQTT(arduino):
 		client.subscribe("Arduinos/%s/online" % self.nombre)
   
 	def setup(self, tipo, nombre, pin, pinPower):
-		msg = '{"command":"setup", "tipo":'+tipo+',"nombre":'+nombre+', "pin":'+pin+', "pinPower":'+pinPower+'}'
+		msg = '{"command":"setup", "tipo":"'+tipo+'","nombre":"'+nombre+'", "pin":'+str(pin)+', "pinPower":'+str(pinPower)+'}'
+		self.logger.info("Hago setup: %s" % msg)
 		self.enviaComando(msg)
 
 class shelly(arduino):
 	def __init__(self, nombre, broker_address):
 		super().__init__(nombre)
 		self.broker_address = broker_address
-		delattr(self.pin)
+		delattr(self,"pin")
 		self.conexion = "MQTT"
 
 	def enviaComando(self, mensaje):
@@ -185,6 +188,7 @@ class shelly(arduino):
 		return(True)
 	
 	def setPin(self, nombre, valor):
+		valor  =True if valor == 255 else False
 		return(self.enviaComando('{"id":1, "src":"Shellys/'+nombre+'/respuestas", "method":"Switch.Set","params":{"id":0,"on":'+str(valor).lower()+'}}'))
 
 	def reset(self):
@@ -193,4 +197,6 @@ class shelly(arduino):
 	def subscribe(self, client):
 		client.subscribe("Shellys/%s/status/switch:0" % self.nombre)
 		client.subscribe("Shellys/%s/online" % self.nombre)
-  
+
+	def setup(self):
+		pass

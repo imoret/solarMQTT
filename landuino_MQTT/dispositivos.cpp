@@ -6,11 +6,13 @@ dispositivo::dispositivo(int p, int pPower, String n)
     nombre = n;
     pin = p;
     pinPower = pPower;
+    topicOnline="Dispositivos/"+nombre+"/online";
+    topicStatus="Dispositivos/"+nombre+"/status";
 }
 
 String dispositivo::status()
 {
-    String status = "'nombre':'" + nombre + "','estado':'" + estado + "','consumo':" + consumo();
+    String status = "{\"event\":\"status\",\"nombre\":\"" + nombre + "\",\"estado\":" + estado +",\"consumo\":" + consumo() + "}";
     return (status);
 }
 

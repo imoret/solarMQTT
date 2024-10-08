@@ -15,10 +15,10 @@ MqttClient mqttClient(client);
 const char broker[] = "192.168.2.105";
 int port = 1883;
 
-const char topic0[sizeof(topicBase) + sizeof(ardName)];
-const char topicOnline[sizeof(topic0) + 6];
-const char topicCommand[sizeof(topic0) + 7];
-const char topicEvent[sizeof(topic0) + 5];
+char topic0[sizeof(topicBase) + sizeof(ardName)];
+char topicOnline[sizeof(topic0) + 6];
+char topicCommand[sizeof(topic0) + 7];
+char topicEvent[sizeof(topic0) + 5];
 
 // set interval for sending messages (milliseconds)
 const int interval = 8000;
@@ -60,7 +60,7 @@ void setup()
     mqttClient.subscribe(topicCommand);
 
     // Solicito configuracion
-    String eventMessage = "{'event':'init'}";
+    String eventMessage = "{\"event\":\"init\"}";
     bool retained = false;
     int qos = 1;
     bool dup = false;
@@ -84,6 +84,13 @@ void loop()
         // save the last time a message was sent
         previousMillis = currentMillis;
 
+        //Compruebo si la conexión sigue activa
+        if (!mqttClient.connected()) {
+            while (!mqttClient.connect(broker, port)) {
+                delay(100);
+            }
+        }
+
         // Envio un true a online
         String message = "true";
         bool retained = true;
@@ -93,10 +100,10 @@ void loop()
         mqttClient.print(F("true"));
         mqttClient.endMessage();
 
-        // Envio un status
+        // Envio un status de los dispositivos
         sendStatus();
 
-        //Envio un online
+        //Envio un online de los dispositivos
         sendOnline();
     }
 }
@@ -125,16 +132,17 @@ void onMqttMessage(int messageSize)
         int pin = doc["pin"];
         int pinPower = doc["pinPower"];
 
+        dispositivos[pin] = new dispositivo(pin, pinPower, nombre);
+        dispositivos[pin]->setPin("LOW");
+
         // Configuro un "Last Will and Testamet" (LTW)
         String willPayload = "false";
         bool willRetain = true;
         int willQos = 1;
-        mqttClient.beginWill("Dispositivos"+dispositivos[i]->nombre+"online", willPayload.length(), willRetain, willQos);
+        mqttClient.beginWill(dispositivos[i]->topicOnline, willPayload.length(), willRetain, willQos);
         mqttClient.print(willPayload);
         mqttClient.endWill();
 
-        dispositivos[pin] = new dispositivo(pin, pinPower, nombre);
-        dispositivos[pin]->setPin("LOW");
         sendStatus(pin);
     }
 
@@ -180,13 +188,11 @@ void sendStatus(int i)
     wdt_reset();
     if (dispositivos[i] != NULL)
     {
-        String message = "{'event':'status',";
-        message.concat(dispositivos[i]->status());
-        message.concat("}");
+        String message = dispositivos[i]->status();
         bool retained = false;
         int qos = 1;
         bool dup = false;
-        mqttClient.beginMessage("Dispositivos"+dispositivos[i]->nombre+"status", message.length(), retained, qos, dup);
+        mqttClient.beginMessage(dispositivos[i]->topicStatus, message.length(), retained, qos, dup);
         mqttClient.print(message);
         mqttClient.endMessage();
     }
@@ -201,7 +207,7 @@ void sendOnline(){
             bool retained = true;
             int qos = 1;
             bool dup = false;
-            mqttClient.beginMessage("Dispositivos"+dispositivos[i]->nombre+"online", message.length(), retained, qos, dup);
+            mqttClient.beginMessage(dispositivos[i]->topicOnline , message.length(), retained, qos, dup);
             mqttClient.print(F("true"));
             mqttClient.endMessage();
         }
