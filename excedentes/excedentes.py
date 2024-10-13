@@ -104,16 +104,48 @@ class instalacion:
                 #Reinicio los arduinos
                 for a in self.arduinos.values():
                     a.reset()
+
         #Creo un hilo que actualiza la produccion/excedente
         self.update_control = threading.Thread(target=self.update)
         self.update_control.daemon = True
         self.update_control.start()
+
+        #Creo un hilo para cada arduino serial que sera el encargado de recibir mensajes
+        for a in self.arduinos.values():
+            self.receptor = threading.Thread(target=self.recibeComando, args=(a.puerto, a.semaforoCom))
+            self.receptor.setDaemon(True)
+            self.receptor.start()
         
         #Creo un hilo que gestiona las conexiones MQTT.
+        self.semaforoCom = threading.Semaphore(1)	#Semaforo para maniobrar el arduino
         self.mqtt_control = threading.Thread(target=self.thread_mqtt)
         self.mqtt_control.daemon = True
         self.mqtt_control.start()
-        
+
+    def recibeComando(self, puerto, semaforoCom):		
+        while not self.kill_threads:
+            with semaforoCom:
+                try:
+                    if puerto.in_waiting > 0:
+                        comando = self.puerto.readline().decode("utf-8").strip()
+						#self.logger.debug("He recibido un comando:" +comando)
+                        try:
+                            comandoJson = json.loads(comando)
+                            decoded_message = comandoJson['mensaje']
+                            canal = comandoJson['canal']
+                            destino = comandoJson['destino']
+                            nombre = comandoJson['nombre']
+                            self.procesaComando(decoded_message, canal, destino, nombre)
+                        except:
+                            pass
+							#self.logger.error("JSON: invalido")
+					#self.puerto.reset_input_buffer()
+                except:
+					#self.logger.debug("Este dispositivo no se comunica por puerto serie, no se admiten comandos")
+                    exit()
+            time.sleep(0.1)
+        self.logger.info("Matando hilo<--------------------------------------------")
+
     def creaLCD(self):
 		#Creo la LCD
 		# constants to initialise the LCD
@@ -174,9 +206,16 @@ class instalacion:
         nombre=message.topic.split('/')[1]
         canal=message.topic.split('/')[2]
 
+        #Creo un hilo que procesará el comando recibido
+        self.procesa = threading.Thread(target=self.recibeComando, args=(decoded_message, canal, destino, nombre))
+        self.receptor.setDaemon(True)
+        self.receptor.start()
         #self.logger.info(decoded_message)
         
 		
+        
+
+    def procesaComando(self, decoded_message, canal, destino, nombre):
         #Si recibo un online
         if canal == "online":
             if destino == "Shellys" or destino == "Arduinos":

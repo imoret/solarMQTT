@@ -1,0 +1,1 @@
+/home/moret/nextcloud/soft/solar_MQTT/landuino_MQTT/dispositivos.h
