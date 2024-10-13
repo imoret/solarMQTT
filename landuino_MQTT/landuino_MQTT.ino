@@ -5,7 +5,7 @@
 #include <avr/wdt.h>
 #include "dispositivos.h"
 
-const char ardName[] = "ard0/";
+const char ardName[] = "land0/";
 const char topicBase[] = "Arduinos/";
 byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED}; // Ponemos la dirección MAC de la Ethernet Shield
 IPAddress ip(192, 168, 2, 177);                    // Asignamos  la IP al Arduino
@@ -75,7 +75,6 @@ void loop()
 {
     wdt_reset();
     mqttClient.poll();
-    digitalWrite(13, HIGH);
 
     unsigned long currentMillis = millis();
 

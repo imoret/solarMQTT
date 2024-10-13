@@ -73,37 +73,6 @@ class arduino_serial(arduino):
 		puerto.close()
 		puerto.open()
 		return(puerto)
-	
-	def recibeComando(self):		
-		comandos = {b'1': self.clicLCD, b'2': self.giroDerecha, b'3':self.giroIzq} #Diccionario de comandos/funciones
-		comando = 0
-		
-		while not self.kill_threads:
-			with self.semaforoCom:
-				try:
-					if self.puerto.in_waiting > 0:
-						comando = self.puerto.readline().decode("utf-8").strip()
-						#self.logger.debug("He recibido un comando:" +comando)
-						try:
-							comandoJson = json.loads(comando)
-							#self.logger.debug("JSON: " +str(comandoJson))
-							if (comandoJson["comando"]=="consumo"):
-								if (comandoJson["consumo"]<0):comandoJson["consumo"]=0
-								self.pin[comandoJson["pin"]].consumo = comandoJson["consumo"]
-								#self.logger.debug("Pin: "+str(comandoJson["pin"])+" puesto a "+str(self.pin[comandoJson["pin"]].consumo ))
-						except:
-							pass
-							#self.logger.error("JSON: invalido")
-					#self.puerto.reset_input_buffer()
-				except:
-					#self.logger.debug("Este dispositivo no se comunica por puerto serie, no se admiten comandos")
-					exit()
-			if comando in comandos:
-				self.logger.debug("Ejecuto: "+str(comandos[comando]))
-				comandos[comando]()	
-			comando = 0
-			time.sleep(0.1)
-		self.logger.info("Matando hilo<--------------------------------------------")
 		
 	def enviaComando(self,comando):
 		salida=True
@@ -112,12 +81,9 @@ class arduino_serial(arduino):
 			self.puerto.write(comandoBytes);
 			time.sleep(0.1)
 			respuesta = self.puerto.readline().decode("utf-8")
-			#self.logger.debug("Respuesta Arduino: "+str(respuesta))
 			while str(respuesta) == '':
 				respuesta=self.reset()
 				salida=False
-			#self.puerto.reset_input_buffer()
-			#self.puerto.close()
 		self.online = salida
 		return(salida)
 
@@ -136,6 +102,11 @@ class arduino_serial(arduino):
 			
 	def setPin(self,nombre,valor):
 		return(self.enviaComando('{"command":"setPin", "dispositivo":"'+nombre+'", "valor":"'+str(valor)+'"}'))
+	
+	def setup(self, tipo, nombre, pin, pinPower):
+		msg = '{"command":"setup", "tipo":"'+tipo+'","nombre":"'+nombre+'", "pin":'+str(pin)+', "pinPower":'+str(pinPower)+'}'
+		self.logger.info("Hago setup: %s" % msg)
+		self.enviaComando(msg)
 
 #arduino conectado por MQTT	
 class arduino_MQTT(arduino):	
