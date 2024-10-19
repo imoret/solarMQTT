@@ -31,7 +31,7 @@ class pin:
 	
 #Arduino "metaClase"
 class arduino:
-	def __init__(self,nombre,):
+	def __init__(self,nombre):
 		self.nombre=nombre
 		self.online = True
 		self.kill_threads = False
@@ -54,7 +54,6 @@ class arduino:
 
 #Arduino conectado por puerto serie		
 class arduino_serial(arduino):	
-
 	def __init__(self,nombre,pto):
 		super().__init__(nombre)
 		self.pto=pto
@@ -72,23 +71,38 @@ class arduino_serial(arduino):
 		#self.puerto.setDTR(False)
 		puerto.close()
 		puerto.open()
+		time.sleep(2)
 		return(puerto)
 		
 	def enviaComando(self,comando):
 		salida=True
-		comandoBytes = comando.encode()
+		comandoBytes = comando.encode(encoding="utf-8")
+		comandoBytes += b'\n'
 		with self.semaforoCom:
-			self.puerto.write(comandoBytes);
-			time.sleep(0.1)
+			#self.logger.debug("Bloqueo el semaforo")
+			try:
+				self.puerto.write(comandoBytes);
+				time.sleep(0.1)
+			except:
+				self.logger.error("Al enviar comando a %s" % self.nombre)
+				salida=False
+			#self.logger.debug("Desbloqueo el semaforo")
+
+		try:
 			respuesta = self.puerto.readline().decode("utf-8")
-			while str(respuesta) == '':
+			if str(respuesta) == '':
 				respuesta=self.reset()
 				salida=False
+		except Exception as e:
+			self.logger.error("Enviado comando a %s error:%s" %(self.nombre,e))
+			salida=False
 		self.online = salida
 		return(salida)
 
 	def reset(self):
 		self.logger.error("MIERDA, EL ARDUINO SE HA COLGADO!!!!")
+		delattr(self,"puerto")
+		self.puerto = self.creaPuerto(self.pto)
 		self.puerto.close()
 		self.puerto.open()
 		self.puerto.setDTR(False)							#Flanco de bajada resetea arduino
@@ -96,7 +110,11 @@ class arduino_serial(arduino):
 		self.puerto.flushInput()							# Se borra cualquier data que haya quedado en el buffer
 		self.puerto.setDTR()								#Flanco de subida
 		time.sleep(0.3)
-		respuesta = self.puerto.readline().decode("utf-8")	#Espero la respuesta de arduino
+		with self.semaforoCom:
+			try:
+				respuesta = self.puerto.readline().decode("utf-8")	#Espero la respuesta de arduino
+			except Exception as e:
+				respuesta = "No hay respuesta, error %s" %e
 		self.logger.warning("Reseteo arduino, respuesta: -"+str(respuesta))
 		return(respuesta)
 			
@@ -105,7 +123,7 @@ class arduino_serial(arduino):
 	
 	def setup(self, tipo, nombre, pin, pinPower):
 		msg = '{"command":"setup", "tipo":"'+tipo+'","nombre":"'+nombre+'", "pin":'+str(pin)+', "pinPower":'+str(pinPower)+'}'
-		self.logger.info("Hago setup: %s" % msg)
+		self.logger.info("Hago setup:%s-" % msg)
 		self.enviaComando(msg)
 
 #arduino conectado por MQTT	
@@ -159,7 +177,7 @@ class shelly(arduino):
 		return(True)
 	
 	def setPin(self, nombre, valor):
-		valor  =True if valor == 255 else False
+		valor  = True if valor == 255 else False
 		return(self.enviaComando('{"id":1, "src":"Shellys/'+nombre+'/respuestas", "method":"Switch.Set","params":{"id":0,"on":'+str(valor).lower()+'}}'))
 
 	def reset(self):

@@ -42,7 +42,9 @@ class fronius:
 				else:
 					self.produccion=self.Json["Body"]["Data"]["Inverters"]["1"]["P"]
 					self.excedente=self.Json["Body"]["Data"]["Site"]["P_Grid"]
-					#self.logger.info("Produccion: %s excedente: %s" %(self.produccion, self.excedente))
+					#self.produccion += 10
+					#self.excedente -= 10
+					self.logger.info("Produccion: %s excedente: %s" %(self.produccion, self.excedente))
 		
 		if (intento >= 3 and not self.online):
 			self.logger.error("Inversor fuera de servicio o inalcanzable")

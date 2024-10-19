@@ -25,8 +25,8 @@ void setup()
 
     wdt_enable(WDTO_8S);
     Serial.begin(9600);
-
-    Serial.println("{\"event\":\"init\"}");
+    Serial.println("");
+    Serial.println("{\"canal\" : \"event\", \"destino\" : \"Arduinos\", \"nombre\":\"" + nombre + "\",\"mensaje\": {\"event\":\"init\"}}");
     wdt_reset();
 }
 
@@ -41,7 +41,7 @@ void loop()
         previousMillis = currentMillis;
 
         // Envio un true a online
-        String message = "{\"canal\" : \"event\", \"destino\" : \"Arduinos\", \"nombre\":\"" + nombre + "\",\"mensaje\":" + true + "}";
+        String message = "{\"canal\" : \"online\", \"destino\" : \"Arduinos\", \"nombre\":\"" + nombre + "\",\"mensaje\":\"true\"}";
         Serial.println(message);
         
         // Envio un status de los dispositivos
@@ -53,6 +53,7 @@ void loop()
 
     if (stringComplete)
     {
+        Serial.println(inputString);
         StaticJsonDocument<300> doc;
         deserializeJson(doc, inputString);
         String command = doc["command"];
@@ -68,6 +69,7 @@ void loop()
             dispositivos[pin] = new dispositivo(pin, pinPower, nombre);
             dispositivos[pin]->setPin("LOW");
 
+            Serial.println("ok");
             sendStatus(pin);
         }
 
@@ -81,19 +83,25 @@ void loop()
                 {
                     String v = doc["valor"];
                     dispositivos[i]->setPin(v);
+                    Serial.println("ok");
+                    Serial.print("");
                     sendStatus(i);
                     break;
                 }
-            }
-
-            // ######  RESET
-            if (command == "reset")
-            {
-                while (1)
-                {
-                }
+                Serial.print("ko");
+                Serial.print("");
             }
         }
+
+            // ######  RESET
+        if (command == "reset")
+        {
+          while (1)
+          {
+          }
+        }
+        inputString = "";
+        stringComplete = false;
     }
 }
 
@@ -102,13 +110,12 @@ void serialEvent()
     while (Serial.available())
     {
         char inChar = (char)Serial.read();
+        
         if (inChar == '\n')
         {
             stringComplete = true;
-        }
-        else
-        {
-            inputString += inChar;
+        }else{
+          inputString += inChar;
         }
     }
 }
@@ -130,6 +137,7 @@ void sendStatus(int i)
     {
         String message = "{\"canal\" : \"status\", \"destino\" : \"Dispositivos\", \"nombre\":\"" + dispositivos[i]->nombre + "\",\"mensaje\":" + dispositivos[i]->status() + "}";
         Serial.println(message);
+        Serial.print("");
     }
 }
 
@@ -140,6 +148,7 @@ void sendOnline(){
         {
             String message = "{\"canal\" : \"online\", \"destino\" : \"Dispositivos\", \"nombre\":\"" + dispositivos[i]->nombre + "\",\"mensaje\":" + true + "}";
             Serial.println(message);
+            Serial.print("");
         }
     }
 }
