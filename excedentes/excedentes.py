@@ -101,9 +101,7 @@ class instalacion:
                     self.dispositivos[d['nombre']] = aux
                     self.dispositivos[d['nombre']].subscribe(self.mqtt_client)
                     
-                #Reinicio los arduinos
-                for a in self.arduinos.values():
-                    a.reset()
+                
 
         #Creo un hilo que actualiza la produccion/excedente
         self.update_control = threading.Thread(target=self.update)
@@ -112,9 +110,10 @@ class instalacion:
 
         #Creo un hilo para cada arduino serial que sera el encargado de recibir mensajes
         for a in self.arduinos.values():
-            self.receptor = threading.Thread(target=self.recibeComando, args=(a.puerto, a.semaforoCom))
-            self.receptor.setDaemon(True)
-            self.receptor.start()
+            if a.conexion == "serial":
+                self.receptor = threading.Thread(target=self.recibeComando, args=(a.puerto, a.semaforoCom, a.nombre))
+                self.receptor.daemon = True
+                self.receptor.start()
         
         #Creo un hilo que gestiona las conexiones MQTT.
         self.semaforoCom = threading.Semaphore(1)	#Semaforo para maniobrar el arduino
@@ -122,27 +121,41 @@ class instalacion:
         self.mqtt_control.daemon = True
         self.mqtt_control.start()
 
-    def recibeComando(self, puerto, semaforoCom):		
-        while not self.kill_threads:
+        #Reinicio los arduinos
+        time.sleep(5)
+        for a in self.arduinos.values():
+            a.reset()
+
+    def recibeComando(self, puerto, semaforoCom, arduino):		
+        global kill_threads
+        while not kill_threads:
             with semaforoCom:
+                #self.logger.debug("Bloqueo el semaforo")
                 try:
                     if puerto.in_waiting > 0:
-                        comando = self.puerto.readline().decode("utf-8").strip()
-						#self.logger.debug("He recibido un comando:" +comando)
+                        comando = puerto.readline().decode("utf-8").strip()
+                        #self.logger.debug("He recibido un comando:" +comando)
                         try:
                             comandoJson = json.loads(comando)
-                            decoded_message = comandoJson['mensaje']
+                            decoded_message = json.dumps(comandoJson['mensaje'])
+                            #decoded_message = str(comandoJson['mensaje'].decode("utf-8"))
                             canal = comandoJson['canal']
                             destino = comandoJson['destino']
                             nombre = comandoJson['nombre']
-                            self.procesaComando(decoded_message, canal, destino, nombre)
-                        except:
+                            #self.logger.debug("Proceso: %s %s %s msg %s" % (canal, destino, nombre, decoded_message))
+                            procesandoComando = threading.Thread(target=self.procesaComando, args=(decoded_message, canal, destino, nombre))
+                            procesandoComando.daemon = True
+                            procesandoComando.start()
+                            #self.procesaComando(decoded_message, canal, destino, nombre)
+                        except Exception as e:
                             pass
-							#self.logger.error("JSON: invalido")
 					#self.puerto.reset_input_buffer()
-                except:
-					#self.logger.debug("Este dispositivo no se comunica por puerto serie, no se admiten comandos")
-                    exit()
+                except Exception as e:
+                    self.logger.error("En recibeComando: %s" % e)
+                    #self.arduinos[arduino].reset()
+                    #exit()
+                #self.logger.debug("Desbloqueo el semaforo")
+
             time.sleep(0.1)
         self.logger.info("Matando hilo<--------------------------------------------")
 
@@ -207,21 +220,25 @@ class instalacion:
         canal=message.topic.split('/')[2]
 
         #Creo un hilo que procesará el comando recibido
-        self.procesa = threading.Thread(target=self.recibeComando, args=(decoded_message, canal, destino, nombre))
-        self.receptor.setDaemon(True)
-        self.receptor.start()
+        self.procesa = threading.Thread(target=self.procesaComando, args=(decoded_message, canal, destino, nombre))
+        self.procesa.daemon = True
+        self.procesa.start()
         #self.logger.info(decoded_message)
         
 		
         
 
     def procesaComando(self, decoded_message, canal, destino, nombre):
+        #self.logger.debug("ProcesaComando canal:%s destino:%s nombre:%s" % (canal, destino, nombre))
         #Si recibo un online
         if canal == "online":
-            if destino == "Shellys" or destino == "Arduinos":
+            if (destino == "Shellys" or destino == "Arduinos"):
                 self.arduinos[nombre].online = True if decoded_message == 'true' else False
+                #self.logger.debug("%s online a %s" % (nombre, decoded_message))
             if destino == "Dispositivos":
                 self.dispositivos[nombre].online = True if decoded_message == 'true' else False
+                #self.logger.debug("%s online a %s" % (nombre, decoded_message))
+                
                 
         #Si recibo un evento
         if canal == "event":
@@ -232,7 +249,7 @@ class instalacion:
                 if msg['event'] == 'init':
                     #self.logger.info("Mensaje recibido: %s" % decoded_message)
                     a = self.arduinos[nombre]
-                    #self.logger.info("Orden setup para %s" % nombre)
+                    self.logger.info("Configuro dispositivos de %s" % nombre)
                     for d in self.dispositivos.values():
                         if a.nombre == d.ard.nombre:
                             self.logger.info("Orden setup para %s" % d.nombre)
@@ -246,9 +263,9 @@ class instalacion:
 
             if destino == "Shellys":
                 d = self.dispositivos[nombre]
-                #self.logger.info("%s -> %s" %(nombre, d.nombre))
                 d.powerAct = 255 if str(msg["output"]) == 'True' else 0
                 d.consumo = msg["apower"]
+                self.logger.debug("%s power puesto a:%s" %(nombre, d.powerAct))
                 if (msg["source"] != 'init' and msg["source"] != 'MQTT' and d.modoManual == False):
                     #d.logger.info("Puesto en modo manual");
                     d.modoManual = True
@@ -258,6 +275,7 @@ class instalacion:
 
             if destino == "Dispositivos":
                 self.dispositivos[nombre].setStatus(msg['estado'], msg['consumo'])
+                #self.logger.debug("%s status:%s consumo:" %(nombre, str(self.dispositivos[nombre].powerAct), str(self.dispositivos[nombre].consumo)))
 
             if destino == "Arduinos":
                 pass
@@ -271,6 +289,7 @@ class instalacion:
                 p += i.getProduccion()
             self.excedente = e
             self.produccion = p
+            #self.logger.info("Produccion %s Excedente %s" % (p,e))
             
             try:
                 self.lcd.cursor_pos = (0, 0)
@@ -318,6 +337,7 @@ class instalacion:
 			'''
             #self.logger.info("Reparto %s" % d.nombre)
             disponible = self.excedente - self.disponible_dispositivos(i) if d.powerAct == 0 else self.excedente
+            #self.logger.info("%s dipone de %s wh" % (d.nombre, disponible))
             i+=1
             t=int(time.time())
             th = (d.tiempoHoy - t + d.horaEncendido) if d.powerAct > 0 else d.tiempoHoy
@@ -326,37 +346,51 @@ class instalacion:
             
             if hora in d.horasOn:											#Si es hora de estar encendido lo enciendo
                 E = 255
+                #self.logger.info("1")
             elif hora in d.horasOff:
                 E = 0
+                #self.logger.info("2")
             elif (d.tiempoMaximo != 0) and (d.get_tiempo_hoy()<0): #Si tiempoMaximo es distinto de 0 y ha pasado ese tiempo encendido, lo apago.
                 E = 0
+                #self.logger.info("3")
             elif (d.tiempoHoy+tiempo >= d.horaCorte and tiempo < d.horaCorte):	#Si se acaba el tiempo para la programacion diaria
                 E = 255
+                #self.logger.info("4")
             elif (d.consumExcedente) or (d.tiempoHoy > 0):			#Si hay que consumir escedentes
                 if d.tipo =="capacitativo":
                     if disponible <= -(d.power-(d.minP/2)) :		#Si hay disponible suficiente enciendo 
                         E = 255
+                        #self.logger.info("5")
                     elif (disponible <= d.minP and d.powerAct > 0): #Si consumo por debajo del minimo y ya estoy encendido sigo encendido
                         E = 255
+                        #self.logger.info("6")
                     else:												#Si estoy consumiendo paro
                         E = 0
                 if d.tipo == "resistivo":
                     if disponible < -(d.power) :					#Si voy sobrado me pongo a tope
                         E = 255
+                        #self.logger.info("7")
                     elif disponible <= -(d.minP/2):					#Si me sobra por encima de minimo, sumo un 20% del sobrante
                         E = d.powerAct+int(-disponible*2/100)
-                        if E<50:E=50											#Me aseguro de empezar por encima del minimo
+                        if E<50:E=50	
+                        #self.logger.info("8")									#Me aseguro de empezar por encima del minimo
                     elif -(d.minP/4) > disponible > -(d.minP/2):  				#Si me sobra entre minP y minP/2 sumo 1
                         E = d.powerAct+1
+                        #self.logger.info("9")
                     elif 0 >= disponible >= -(d.minP/4):					#Si sobra entre 0 y minP/4 inyecto el excedente a la red
                         E = d.powerAct
+                        #self.logger.info("10")
                     elif d.power > disponible > 0:				#Si estoy consumiendo bajo el cosumo
                         E = d.power-int(disponible*2/100)
+                        #self.logger.info("11")
                     else:														# En otro caso (Consumo mas del maximo) pongo a 0
                         E=0
+                        #self.logger.info("12")
             else:
                 E = 0									#Si no hay que repartir execentes, paro
+                #self.logger.info("13")
             
+            #self.logger.info("comparo %s con %s" %(d.powerAct, E))
             if d.powerAct != E:
                 if d.setPower(E):              # Si ha habido cambios y se aceptan lo muestro en la LCD
                     lcdDatos=str(d.nombre+":"+str("ON" if d.powerAct != 0 else "OFF")+" ") 
@@ -369,7 +403,7 @@ class instalacion:
                     if lcdPos==10: lcdLin+=1
                     lcdPos = 0 if (lcdPos==10) else 10
                     
-                    time.sleep(0.5)
+                    time.sleep(2.5)
                     break
             
     def paradaEmergencia(self, logText = "PARADA DE EMERGENCIA Superado maximo KWs permitidos ", espera=60):
@@ -468,6 +502,7 @@ def principal():
         d.kill_threads = True
     for a in casa.arduinos.values():
         a.kill_threads = True
+    kill_threads = True
     casa.mqtt_client.disconnect()
     casa.paradaEmergencia("SALIENDO",10)
 	

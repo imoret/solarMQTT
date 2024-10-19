@@ -26,16 +26,10 @@ class dispositivo:
 		self.tiempoMaximo=tiempoMaximo*60
 		self.minTiempoSeguido = minTiempoSeguidoEnMarcha*60
 		self.setTiempoHoy(self.tiempoDiario, True)
-		self.horaEncendido = int(time.time())
+		self.horaEncendido = int(time.time())-self.minTiempoSeguido
 		self.horaCorte = horaC * 3600
 		self.emergencia = False
 		self.modoManual = False
-
-		#Creo un semaforo para maniobrar el dispositivo
-		self.semaforoCom = threading.Semaphore(1)
-
-		self.setPower(0)					#Inicializo apagado
-		self.kill_threads = False
 
 		#Creo el logger del dispositivo
 		self.logger = logging.getLogger(self.nombre)
@@ -46,11 +40,17 @@ class dispositivo:
 		formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 		fhd.setFormatter(formatter)
 		self.logger.addHandler(fhd)
-		
+
+		#Creo un semaforo para maniobrar el dispositivo
+		self.semaforoCom = threading.Semaphore(1)
+
 		#creo un hilo que carge la configuacion cada dia
+		self.kill_threads = False
 		self.r = threading.Thread(target=self.threadDiario)
 		self.r.setDaemon(True)
 		self.r.start()
+
+		self.setPower(0)					#Inicializo apagado
 	
 	def threadDiario(self):
 		while not self.kill_threads:
@@ -72,15 +72,15 @@ class dispositivo:
 	def setPower(self, valor):
 		with self.semaforoCom:	#Activo el semaforo para evitar concurrencias en el apagado
 			t=int(time.time())
-			if (self.horaEncendido+self.minTiempoSeguido < t) or (self.emergencia) or self.powerAct < valor:  	# Acepta si: 	- ha pasado el tiempo minimo de encendido
+			if (self.horaEncendido+self.minTiempoSeguido <= t) or (self.emergencia) or self.powerAct < valor:  	# Acepta si: 	- ha pasado el tiempo minimo de encendido
 				self.logger.info("Setpower de %s a %s" % (self.nombre, valor))
-				self.ard.setPin(self.nombre, valor)																#				- Es una emergencia			
-				return(True)																					#				- Es un aumento de potencia
+				salida = self.ard.setPin(self.nombre, valor)																#				- Es una emergencia			
+				return(salida)																					#				- Es un aumento de potencia
 			else:
 				return(False)
 
 	def resetea(self):
-		if self.encendido:
+		if self.powerAct > 0:
 			t=int(time.time())
 			self.horaEncendido=t
 
