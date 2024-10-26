@@ -4,6 +4,7 @@ import threading
 import operator
 from dispositivo import dispositivo
 from arduino import arduino_serial, arduino_MQTT, shelly
+from lcd import lcd
 from inversor import fronius
 from signal import signal, SIGINT
 from sys import exit
@@ -24,11 +25,7 @@ class instalacion:
         self.dispositivos = {}
         
         self.produccion = 0
-        self.excedente = 0
-        
-        #Creo la LCD
-        self.lcdLuz=True
-        self.lcd = self.creaLCD() 
+        self.excedente = 0 
         
 		#Creo el logger de la instalacion
         self.logger = logging.getLogger('instalacion')
@@ -47,6 +44,14 @@ class instalacion:
                 self.nuevaConf = conf['nuevaConf']
                 self.maxRed = conf['data']['maxRed']
                 self.localIP = conf['data']['localIP']
+
+                #Creo la LCD
+                if conf['data']['lcd']:
+                    lat = conf['data']['lat']
+                    lon = conf['data']['lon']
+                    self.lcd = lcd(lat, lon)
+                else:
+                    self.lcd = False
 				
                 #Preparo el MQTT
                 self.broker_address = conf['data']['broker_address']
@@ -134,7 +139,7 @@ class instalacion:
                 try:
                     if puerto.in_waiting > 0:
                         comando = puerto.readline().decode("utf-8").strip()
-                        #self.logger.debug("He recibido un comando:" +comando)
+                        #self.logger.debug("He recibido un comando:" +comando+"-")
                         try:
                             comandoJson = json.loads(comando)
                             decoded_message = json.dumps(comandoJson['mensaje'])
@@ -158,36 +163,6 @@ class instalacion:
 
             time.sleep(0.1)
         self.logger.info("Matando hilo<--------------------------------------------")
-
-    def creaLCD(self):
-		#Creo la LCD
-		# constants to initialise the LCD
-        lcdmode = 'i2c'
-        cols = 20
-        rows = 4
-        charmap = 'A00'
-        i2c_expander = 'PCF8574'
-
-		# Generally 27 is the address;Find yours using: i2cdetect -y 1 
-        address = 0x27 
-        port = 1 # 0 on an older Raspberry Pi
-
-		# Initialise the LCD
-        try:
-            lcd = i2c.CharLCD(i2c_expander, address, port=port, charmap=charmap,cols=cols, rows=rows)
-            lcd.backlight_enabled = self.lcdLuz
-            return(lcd)
-        except:
-            #print("No hay una LCD!!")
-            #self.logger.error("No ha una lcd presente")
-            return(False)
-
-    def resetLCD(self):
-        try:
-            del self.lcd
-        except:
-            pass
-        self.creaLCD()	
 
     def thread_mqtt(self):
         while not kill_threads:
@@ -261,17 +236,23 @@ class instalacion:
         if canal == "status":
             msg=json.loads(decoded_message)
 
+#          if destino == "Shellys":
+#              d = self.dispositivos[nombre]
+#             newPower = 255 if str(msg["output"]) == 'True' else 0
+#                if newPower != d.powerAct and d.powerAct == 0:
+#                    d.horaEncendido = int(time.time())
+#                d.powerAct = newPower
+#                d.consumo = msg["apower"]
+#                #self.logger.debug("%s power puesto a:%s" %(nombre, d.powerAct))
+#                if (msg["source"] != 'init' and msg["source"] != 'MQTT' and d.modoManual == False):
+#                    #d.logger.info("Puesto en modo manual");
+#                    d.modoManual = True
+#                if ((msg["source"] == 'init' or msg["source"] == 'MQTT') and d.modoManual == True): 
+#                    #d.logger.info("Puesto en modo automatico");
+#                    d.modoManual = False
             if destino == "Shellys":
-                d = self.dispositivos[nombre]
-                d.powerAct = 255 if str(msg["output"]) == 'True' else 0
-                d.consumo = msg["apower"]
-                self.logger.debug("%s power puesto a:%s" %(nombre, d.powerAct))
-                if (msg["source"] != 'init' and msg["source"] != 'MQTT' and d.modoManual == False):
-                    #d.logger.info("Puesto en modo manual");
-                    d.modoManual = True
-                if ((msg["source"] == 'init' or msg["source"] == 'MQTT') and d.modoManual == True): 
-                    #d.logger.info("Puesto en modo automatico");
-                    d.modoManual = False
+                newPower = 255 if str(msg["output"]) == 'True' else 0
+                self.dispositivos[nombre].setStatus(newPower, msg["apower"])
 
             if destino == "Dispositivos":
                 self.dispositivos[nombre].setStatus(msg['estado'], msg['consumo'])
@@ -290,27 +271,8 @@ class instalacion:
             self.excedente = e
             self.produccion = p
             #self.logger.info("Produccion %s Excedente %s" % (p,e))
-            
-            try:
-                self.lcd.cursor_pos = (0, 0)
-                self.lcd.write_string("                    ")
-                self.lcd.cursor_pos = (0, 0)
-                self.lcd.write_string("P:%s E:%s C:%s" % (str(int(self.inversor.produccion)),str(int(self.inversor.excedente)),str(int(self.inversor.produccion+self.inversor.excedente))))
-            except:
-                self.resetLCD()
-
-            try:
-                if (self.produccion>100 and self.lcdLuz == False):
-                    self.lcd.backlight_enabled = True
-                    self.lcdLuz=True
-                    self.logger.info("Las placas empiezan a producir. Encender LCD")
-                if (self.produccion<=0 and self.lcdLuz == True):
-                    self.lcd.backlight_enabled = False
-                    self.lcdLuz=False
-                    self.logger.info("Las placas dejan de producir. Apagar LCD")
-            except:
-                pass
-
+            if self.lcd:   
+                self.lcd.muestraProduccion(p, e)
             time.sleep(0.5)
         
     def disponible_dispositivos(self, i):
@@ -323,11 +285,10 @@ class instalacion:
         for d in copy_dispositivos.values():
             if d.pinPower >= 0 and d.powerAct > 0 and not d.modoManual and hora not in d.horasOn and not (d.tiempoHoy+tiempo >= d.horaCorte and tiempo < d.horaCorte) and (d.horaEncendido + d.minTiempoSeguido < t):
                 disp += d.consumo
+                self.logger.debug("      %s cede %s. Total %s" % (d.nombre, d.consumo, disp))
         return(disp)
         
     def repartir(self):
-        lcdLin=1
-        lcdPos=0
         self.dispositivos = dict(sorted(self.dispositivos.items(), key=lambda dis: dis[1].get_tiempo_hoy(), reverse=(self.excedente < 0)))
         i = 0
         for d in self.dispositivos.values():
@@ -393,16 +354,9 @@ class instalacion:
             #self.logger.info("comparo %s con %s" %(d.powerAct, E))
             if d.powerAct != E:
                 if d.setPower(E):              # Si ha habido cambios y se aceptan lo muestro en la LCD
-                    lcdDatos=str(d.nombre+":"+str("ON" if d.powerAct != 0 else "OFF")+" ") 
-                    if (lcdLin<=3):
-                        try:
-                            self.lcd.cursor_pos = (lcdLin, lcdPos)
-                            self.lcd.write_string(lcdDatos)
-                        except:
-                            self.resetLCD()
-                    if lcdPos==10: lcdLin+=1
-                    lcdPos = 0 if (lcdPos==10) else 10
-                    
+                    self.logger.info("Produccion %s, excendente %s - Dispositivo %s con disponible %s puesto a %s" %(self.produccion, self.excedente, d.nombre, disponible, E))
+                    if self.lcd:
+                        self.lcd.muestra_dispositivos(self.dispositivos.values())
                     time.sleep(2.5)
                     break
             
@@ -412,31 +366,16 @@ class instalacion:
             for d in self.dispositivos.values():
                 d.emergencia = True
                 d.setPower(0)
-            try:
-                self.lcd.backlight_enabled = True
-                self.lcdLuz=True
-                self.lcd.clear()
-                self.lcd.cursor_pos = (1,5)
-                self.lcd.write_string("PARADA  DE")
-                self.lcd.cursor_pos = (2,5)
-                self.lcd.write_string("EMERGENCIA")
-            except:
-                self.resetLCD()
+            if self.lcd:
+                self.lcd.parada_emergencia()               
             time.sleep(10)		
             if self.excedente < self.maxRed: #¢ondicion de salida
                 break
 				
         for i in range(1, espera+1):
-            try:
-                self.lcd.clear()
-                self.lcd.cursor_pos = (0,0)
-                self.lcd.write_string("PARADA DE EMERGENCIA")
-                self.lcd.cursor_pos = (1,0)
-                self.lcd.write_string("Reactivacion en ")
-                self.lcd.cursor_pos = (2,5)
-                self.lcd.write_string(str(espera+1-i)+" segundos")
-            except:
-                self.resetLCD()
+            self.lcd.writeLine("PARADA DE EMERGENCIA", 0)
+            self.lcd.writeLine("Reactivacion en ", 1)
+            self.lcd.writeLine("     %s segundos" % str(espera+1-i), 2)
             time.sleep(1)
         for d in self.dispositivos.values():
             d.emergencia = False

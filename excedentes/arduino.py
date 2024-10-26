@@ -88,14 +88,16 @@ class arduino_serial(arduino):
 				salida=False
 			#self.logger.debug("Desbloqueo el semaforo")
 
-		try:
-			respuesta = self.puerto.readline().decode("utf-8")
-			if str(respuesta) == '':
-				respuesta=self.reset()
-				salida=False
-		except Exception as e:
-			self.logger.error("Enviado comando a %s error:%s" %(self.nombre,e))
-			salida=False
+#		try:
+#			respuesta = self.puerto.readline().decode("utf-8")
+#			print("-"+respuesta+"-")		
+#			if str(respuesta) == '':
+#				respuesta=self.reset()
+#				salida=False	
+#		except Exception as e:
+#			self.logger.error("Enviado comando a %s error:%s" %(self.nombre,e))
+#			salida=False
+
 		self.online = salida
 		return(salida)
 
