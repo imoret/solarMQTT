@@ -100,7 +100,7 @@ class arduino_serial(arduino):
 
 		self.online = salida
 		return(salida)
-
+	
 	def reset(self):
 		self.logger.error("MIERDA, EL ARDUINO SE HA COLGADO!!!!")
 		delattr(self,"puerto")
@@ -127,6 +127,10 @@ class arduino_serial(arduino):
 		msg = '{"command":"setup", "tipo":"'+tipo+'","nombre":"'+nombre+'", "pin":'+str(pin)+', "pinPower":'+str(pinPower)+'}'
 		self.logger.info("Hago setup:%s-" % msg)
 		self.enviaComando(msg)
+		
+	def subscribe(self, client):
+		client.subscribe("Arduinos/%s/event" % self.nombre)
+		client.subscribe("Arduinos/%s/online" % self.nombre)
 
 #arduino conectado por MQTT	
 class arduino_MQTT(arduino):	

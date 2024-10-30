@@ -22,7 +22,8 @@ void setup()
         pinMode(i, OUTPUT);
         digitalWrite(i, LOW);
     }
-
+    inputString.reserve(200);
+    
     wdt_enable(WDTO_8S);
     Serial.begin(9600);
     Serial.println("");
@@ -41,8 +42,10 @@ void loop()
         previousMillis = currentMillis;
 
         // Envio un true a online
-        String message = "{\"canal\" : \"online\", \"destino\" : \"Arduinos\", \"nombre\":\"" + nombre + "\",\"mensaje\":\"true\"}";
-        Serial.println(message);
+        Serial.print("{\"canal\" : \"online\", \"destino\" : \"Arduinos\", \"nombre\":\"");
+        Serial.print(nombre);
+        Serial.println("\",\"mensaje\":\"true\"}");
+
         
         // Envio un status de los dispositivos
         sendStatus();
@@ -53,11 +56,12 @@ void loop()
 
     if (stringComplete)
     {
-        Serial.println(inputString);
         StaticJsonDocument<300> doc;
         deserializeJson(doc, inputString);
         String command = doc["command"];
-
+        
+        //Serial.println(inputString);
+        
         if (command == "setup")
         {
             wdt_reset();
@@ -69,7 +73,7 @@ void loop()
             dispositivos[pin] = new dispositivo(pin, pinPower, nombre);
             dispositivos[pin]->setPin("LOW");
 
-            Serial.println("ok");
+            Serial.println("ok\n");
             sendStatus(pin);
         }
 
@@ -83,13 +87,10 @@ void loop()
                 {
                     String v = doc["valor"];
                     dispositivos[i]->setPin(v);
-                    Serial.println("ok");
-                    Serial.print("");
+                    Serial.println("ok\n");
                     sendStatus(i);
                     break;
                 }
-                Serial.print("ko");
-                Serial.print("");
             }
         }
 
@@ -135,9 +136,15 @@ void sendStatus(int i)
     wdt_reset();
     if (dispositivos[i] != NULL)
     {
-        String message = "{\"canal\" : \"status\", \"destino\" : \"Dispositivos\", \"nombre\":\"" + dispositivos[i]->nombre + "\",\"mensaje\":" + dispositivos[i]->status() + "}";
-        Serial.println(message);
-        Serial.print("");
+       Serial.print("{\"canal\":\"status\", \"destino\":\"Dispositivos\", \"nombre\":\"");
+       Serial.print(dispositivos[i]->nombre);
+       Serial.print("\",\"mensaje\":{\"event\":\"status\",\"nombre\":\"");
+       Serial.print(dispositivos[i]->nombre);
+       Serial.print("\",\"estado\":");
+       Serial.print(dispositivos[i]->estado);
+       Serial.print(" ,\"consumo\":");
+       Serial.print(dispositivos[i]->consumo());
+       Serial.println("}}");
     }
 }
 
@@ -146,9 +153,11 @@ void sendOnline(){
         wdt_reset();
         if (dispositivos[i] != NULL)
         {
-            String message = "{\"canal\" : \"online\", \"destino\" : \"Dispositivos\", \"nombre\":\"" + dispositivos[i]->nombre + "\",\"mensaje\":" + true + "}";
-            Serial.println(message);
-            Serial.print("");
+            Serial.print("{\"canal\" : \"online\", \"destino\" : \"Dispositivos\", \"nombre\":\"");
+            Serial.print(dispositivos[i]->nombre);
+            Serial.print("\",\"mensaje\":");
+            Serial.print(true);
+            Serial.println("}");
         }
     }
 }

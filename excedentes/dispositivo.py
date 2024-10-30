@@ -135,7 +135,7 @@ class dispositivo:
 			self.logger.error(e)
    
 	def subscribe(self, client):
-		if self.ard.conexion == "MQTT":
+		if self.ard.conexion == "MQTT" or self.ard.conexion == "serial":
 			#self.logger.info("Suscripcion a: Dispositivos/%s/status" % self.nombre)
 			client.subscribe("Dispositivos/%s/status" % self.nombre)
 			client.subscribe("Dispositivos/%s/online" % self.nombre)
