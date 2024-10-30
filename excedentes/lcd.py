@@ -24,7 +24,7 @@ class lcd:
 
         try:
             self.lcd = i2c.CharLCD(i2c_expander, address, port=port, charmap=charmap,cols=self.cols, rows=self.rows)
-            self.lcd.backlight_enabled = self.lcdLuz
+            self.luz()
         except:
             return(None)
         
@@ -43,48 +43,57 @@ class lcd:
             with self.semaforoLCD:
                 self.lcd.cursor_pos = (linea, 0)
                 self.lcd.write_string(str(datos_limpios))
-                print(datos_limpios)
         except:
             self.resetLCD()
 
     def muestraProduccion(self, p, e):
-        c = p - e
+        c = p + e
         datos = "P:%s E:%s C:%s" %(p, e, c)
         self.writeLine(datos, 0)
 
     def crea_lineas_dispositivos(self, dispositivos):
         datos = ""
         size = 0
+        for i in range(0,len(self.lineas)):
+                self.lineas.pop(0)
         for d in dispositivos:
             datos_plus = d.nombre + ":"
             if d.tipo == 'capacitativo':              
-                datos_plus += 'ON ' if d.powerAct > 0 else 'OFF '
+                datos_plus += 'ON' if d.powerAct > 0 else 'OFF'
             if d.tipo == 'resistivo':
-                datos_plus += str(int(d.powerAct * 0.392156863)) + "% "
-            
+                datos_plus += str(int(d.powerAct * 0.392156863)) + "%"
+            if len(datos)+len(datos_plus) == self.cols:
+                datos += datos_plus
+                self.lineas.append(datos)
+                datos = ""
             if len(datos)+len(datos_plus) > self.cols:
                 self.lineas.append(datos)
                 datos = datos_plus
             else:
+                datos_plus += ' '
                 datos += datos_plus
         self.lineas.append(datos)
+        for r in range(len(self.lineas),self.rows):
+            datos=""
+            for c in range(0,self.cols):
+                datos += " "
+            self.lineas.append(datos)
 
     def muestra_dispositivos(self,dispositivos):
         self.luz()
         self.crea_lineas_dispositivos(dispositivos)
-        while len(self.lineas) > 3:
-            for i in range(1,self.rows):
+        for i in range(1,self.rows):
                 self.writeLine(self.lineas[i-1],i)
-            if len(self.lineas)>3:
-                self.lineas.pop(0)
-                time.sleep(1)
+
 
     def luz(self):
+        zona_horaria = pytz.timezone("Europe/Madrid")
         hoy = datetime.today()
         sol = SunTimes(self.longitud,self.latitud)
         salidaSol = sol.riselocal(hoy)
         puestaSol = sol.setlocal(hoy)
-        ahora = datetime.now().replace(tzinfo=timezone.utc)
+        #ahora = datetime.now().replace(tzinfo=timezone.utc)
+        ahora = zona_horaria.localize(datetime.now().replace(tzinfo=None))
 
         self.lcdLuz = True if ahora > salidaSol and ahora < puestaSol else False
         try:

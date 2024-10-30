@@ -42,8 +42,8 @@ class fronius:
 				else:
 					self.produccion=self.Json["Body"]["Data"]["Inverters"]["1"]["P"]
 					self.excedente=self.Json["Body"]["Data"]["Site"]["P_Grid"]
-					#self.produccion += 10
-					#self.excedente -= 10
+					#self.produccion -= 1
+					#self.excedente += 1
 					#self.logger.info("Produccion: %s excedente: %s" %(self.produccion, self.excedente))
 		
 		if (intento >= 3 and not self.online):
