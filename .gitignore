@@ -19,3 +19,5 @@
 /excedentes/termo.conf
 /excedentes/termo.conf.lock
 /excedentes/__pycache__
+/excedentes_old/salidaSol.py
+/excedentes_old/solsol.py

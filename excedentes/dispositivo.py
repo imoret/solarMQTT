@@ -85,7 +85,6 @@ class dispositivo:
 			self.horaEncendido=t
 
 	def setTiempoHoy(self,newTiempo,recupera=False):
-
 		fileName = str(self.nombre) + ".conf"
 		lockFileName = str(fileName) + ".lock"
 		lock = FileLock(str(lockFileName))
@@ -144,15 +143,18 @@ class dispositivo:
 		self.ard.setup(self.tipo, self.nombre, self.pin, self.pinPower)
 
 	def setStatus(self,powerAct, consumo):
+		self.consumo = consumo
 		if self.powerAct != powerAct:
-			self.setTiempoHoy(self.get_tiempo_hoy())
-			t=int(time.time())
+			if self.powerAct > 0:
+				#self.setTiempoHoy(self.get_tiempo_hoy())				#Guarda en un archivo el timepo del dia y es capaz de recuperarlos si se reinicia
+				self.tiempoHoy = self.get_tiempo_hoy()
+				t=int(time.time())
 			self.horaEncendido = t
 			self.powerAct = powerAct
-		self.consumo = consumo
+		
 
 	def get_tiempo_hoy(self):
 		t=int(time.time())
 		p = self.powerAct/255 # Tanto por 100 de la potencia
-		th = (self.tiempoHoy - (t - self.horaEncendido) * p)
+		th = int(self.tiempoHoy - (t - self.horaEncendido) * p)
 		return(th)
