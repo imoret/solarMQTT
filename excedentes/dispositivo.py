@@ -151,7 +151,7 @@ class dispositivo:
 			if self.powerAct > 0:
 				#self.setTiempoHoy(self.get_tiempo_hoy())				#Guarda en un archivo el timepo del dia y es capaz de recuperarlos si se reinicia
 				self.tiempoHoy = self.get_tiempo_hoy()
-				self.logger.info("Tiempo hoy: %s"%self.tiempoHoy)
+				self.logger.info("Tiempo hoy: %.2f" %self.tiempoHoy)
 			t=int(time.time())
 			self.horaEncendido = t
 			self.powerAct = powerAct
@@ -160,5 +160,5 @@ class dispositivo:
 	def get_tiempo_hoy(self):
 		t=int(time.time())
 		p = self.powerAct/255 # Tanto por 100 de la potencia
-		th = int(self.tiempoHoy - (t - self.horaEncendido) * p)
+		th = self.tiempoHoy - (t - self.horaEncendido) * p
 		return(th)
