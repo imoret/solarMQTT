@@ -104,7 +104,8 @@ class instalacion:
                     tiempo_seguido = d["modos"][d['modoDia'][datetime.today().weekday()]]["tiempoSeguido"]
                     hora_corte = d["modos"][d['modoDia'][datetime.today().weekday()]]["horaCorte"]
                     minPo = d['minPo']
-                    aux = dispositivo(tipo, nombre, power, ardu, pin, pinPower, t_on, t_off, consumirE, tiempo_al_dia, tiempo_maximo, tiempo_seguido, hora_corte, minPo)
+                    tReact = d['tiempo_reaccion']
+                    aux = dispositivo(tipo, nombre, power, ardu, pin, pinPower, t_on, t_off, consumirE, tiempo_al_dia, tiempo_maximo, tiempo_seguido, hora_corte, minPo, tReact)
                     self.dispositivos[d['nombre']] = aux
                     self.dispositivos[d['nombre']].subscribe(self.mqtt_client)
                     
@@ -297,7 +298,7 @@ class instalacion:
         for d in copy_dispositivos.values():
             if d.pinPower >= 0 and d.powerAct > 0 and not d.modoManual and hora not in d.horasOn and not (d.tiempoHoy+tiempo >= d.horaCorte and tiempo < d.horaCorte) and (d.horaEncendido + d.minTiempoSeguido < t):
                 disp += d.consumo
-                self.logger.debug("      %s cede %s. Total %s" % (d.nombre, d.consumo, disp))
+                #self.logger.debug("      %s cede %s. Total %s" % (d.nombre, d.consumo, disp))
         return(disp)
         
     def repartir(self):
@@ -310,7 +311,7 @@ class instalacion:
 			'''
             #self.logger.info("Reparto %s" % d.nombre)
             disponible = self.excedente - self.disponible_dispositivos(i) if d.powerAct == 0 else self.excedente
-            self.logger.info("%s dipone de %s wh" % (d.nombre, disponible))
+            #self.logger.info("%s dipone de %s wh" % (d.nombre, disponible))
             i+=1
             t=int(time.time())
             th = (d.tiempoHoy - t + d.horaEncendido) if d.powerAct > 0 else d.tiempoHoy
@@ -319,39 +320,46 @@ class instalacion:
             
             if hora in d.horasOn:											#Si es hora de estar encendido lo enciendo
                 E = 255
-                self.logger.info("%s1" %d.nombre)
+                #self.logger.info("%s1" %d.nombre)
             elif hora in d.horasOff:
                 E = 0
-                self.logger.info("2")
-            elif (d.tiempoMaximo != 0) and (d.get_tiempo_hoy()<0): #Si tiempoMaximo es distinto de 0 y ha pasado ese tiempo encendido, lo apago.
+                #self.logger.info("2")
+            elif (d.tiempoMaximo != 0) and (d.get_tiempo_hoy() < -d.tiempoMaximo): #Si tiempoMaximo es distinto de 0 y ha pasado ese tiempo encendido, lo apago.
                 E = 0
-                self.logger.info("3")
+                #self.logger.info("3")
             elif (d.tiempoHoy+tiempo >= d.horaCorte and tiempo < d.horaCorte):	#Si se acaba el tiempo para la programacion diaria
                 E = 255
-                self.logger.info("4")
+                #self.logger.info("4")
             elif (d.consumExcedente) or (d.tiempoHoy > 0):			#Si hay que consumir escedentes
                 if d.tipo =="capacitativo":
                     if disponible <= -(d.power-(d.minP/2)) :		#Si hay disponible suficiente enciendo 
                         E = 255
-                        self.logger.info("5")
+                        #self.logger.info("5")
                     elif (disponible <= d.minP and d.powerAct > 0): #Si consumo por debajo del minimo y ya estoy encendido sigo encendido
                         E = 255
-                        self.logger.info("6")
+                        #self.logger.info("6")
                     else:												#Si estoy consumiendo paro
                         E = 0
                 if d.tipo == "resistivo":
                     if abs(disponible) > d.power*0.5:               #Hay me sobra o consumo mas de un 50%
-                        E += 255*(-disponible/d.power)                  #Hago un encendido/apagado proporcional
-                        self.logger.info("7")
-                    elif disponible < 10:                         #Intento comsumir 10w para que el voltage sea el mínimo
-                        E = d.powerAct+1
-                        self.logger.info("8")
+                        E = int(d.powerAct+(255*(-disponible/d.power)))                  #Hago un encendido/apagado proporcional
+                        #self.logger.info("7")
+                    elif abs(disponible) > d.power*0.25:
+                        E = int(d.powerAct+(255*(-disponible/d.power)/2))
+                    elif abs(disponible) > d.power*0.05:
+                        E = int(d.powerAct+(255*(-disponible/d.power)/3))
+                    elif disponible < 0:
+                        E = d.powerAct + 1
+                        #self.logger.info("8")
+                    #Intento comsumir 20w para que el voltage sea el mínimo
+                    elif disponible < 20:
+                        E = d.powerAct
                     else:               #si consumo mas de 10 bajo despacio
                         E = d.powerAct- 1
-                        self.logger.info("8")
+                        #self.logger.info("8")
             else:
                 E = 0									#Si no hay que repartir execentes, paro
-                self.logger.info("13")
+                #self.logger.info("13")
             
             #self.logger.info("comparo %s con %s" %(d.powerAct, E))
             if E > 255 : E = 255
@@ -359,9 +367,8 @@ class instalacion:
             if d.powerAct != E:
                 if d.setPower(E):              # Si ha habido cambios y se aceptan lo muestro en la LCD
                     self.logger.info("Produccion %s, excendente %s - Dispositivo %s con disponible %s puesto a %s" %(self.produccion, self.excedente, d.nombre, disponible, E))
-                    time.sleep(0.5)
+                    time.sleep(d.tiempo_reaccion)
                     break
-            time.sleep(0.5)
             
     def paradaEmergencia(self, logText = "PARADA DE EMERGENCIA Superado maximo KWs permitidos ", espera=60):
         self.logger.warning(str(logText)+" "+str(int(self.excedente))+" de "+str(int(self.maxRed)))
