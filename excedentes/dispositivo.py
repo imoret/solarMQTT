@@ -7,7 +7,7 @@ from filelock import Timeout, FileLock
 import paho.mqtt.client as mqtt #import the client1
 
 class dispositivo:
-	def __init__(self, tipo, nombre, power, ardu, pinconect, pinpower, hOn, hOff, consumirE, tiempoAlDia=3600,tiempoMaximo=0, minTiempoSeguidoEnMarcha=10, horaC=12, minPo=20, tReact=0.5):
+	def __init__(self, tipo, nombre, power, ardu, pinconect, pinpower, hOn, hOff, consumirE, tiempoAlDia=3600,tiempoMaximo=0, minTiempoSeguidoEnMarcha=10, horaC=12, minPower=20, tReact=0.5):
 		self.tipo = tipo
 		self.nombre=nombre
 		self.power = int(power)
@@ -15,7 +15,7 @@ class dispositivo:
 		self.ard = ardu
 		self.pin = pinconect
 		self.pinPower = pinpower
-		self.minP = power*minPo/100
+		self.minPower = power*minPower/100
 		self.horasOn = hOn
 		self.horasOff = hOff
 		self.consumExcedente = consumirE
@@ -130,7 +130,7 @@ class dispositivo:
 							self.setTiempoHoy(self.tiempoDiario)
 							self.horaCorte = d["modos"][d['modoDia'][dia]]['horaCorte'] * 3600
 							self.modoManual = False
-							self.minP = d['minPo']
+							self.minPower = d['minPower']
 							self.logger.info("Cargada configuracion para el "+dias_semana[dia]+": "+str(d['modoDia'][dia]))
 		except Exception as e:
 			self.logger.error("No es posible cargar la nueva configuracion")
