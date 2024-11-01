@@ -341,7 +341,7 @@ class instalacion:
                     else:												#Si estoy consumiendo paro
                         E = 0
                 if d.tipo == "resistivo":
-                    if d.powerAct == 0 and disponible < d.minPower:         #Evito que se encienda si no hay disponible minimo
+                    if d.powerAct == 0 and disponible > -d.minPower:         #Evito que se encienda si no hay disponible minimo
                         E = 0
                     elif abs(disponible) > d.power*0.5:                       #Me sobra o consumo mas de un 50%
                         E = int(d.powerAct+(255*(-disponible/d.power)))     #Hago un encendido/apagado proporcional
