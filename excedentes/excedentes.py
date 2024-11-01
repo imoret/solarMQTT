@@ -103,9 +103,9 @@ class instalacion:
                     tiempo_maximo = d["modos"][d['modoDia'][datetime.today().weekday()]]["tiempoMaximo"]
                     tiempo_seguido = d["modos"][d['modoDia'][datetime.today().weekday()]]["tiempoSeguido"]
                     hora_corte = d["modos"][d['modoDia'][datetime.today().weekday()]]["horaCorte"]
-                    minPo = d['minPo']
+                    minPower = d['minPower']
                     tReact = d['tiempo_reaccion']
-                    aux = dispositivo(tipo, nombre, power, ardu, pin, pinPower, t_on, t_off, consumirE, tiempo_al_dia, tiempo_maximo, tiempo_seguido, hora_corte, minPo, tReact)
+                    aux = dispositivo(tipo, nombre, power, ardu, pin, pinPower, t_on, t_off, consumirE, tiempo_al_dia, tiempo_maximo, tiempo_seguido, hora_corte, minPower, tReact)
                     self.dispositivos[d['nombre']] = aux
                     self.dispositivos[d['nombre']].subscribe(self.mqtt_client)
                     
@@ -332,17 +332,19 @@ class instalacion:
                 #self.logger.info("4")
             elif (d.consumExcedente) or (d.tiempoHoy > 0):			#Si hay que consumir escedentes
                 if d.tipo =="capacitativo":
-                    if disponible <= -(d.power-(d.minP/2)) :		#Si hay disponible suficiente enciendo 
+                    if disponible <= -(d.power-(d.minPower/2)) :		#Si hay disponible suficiente enciendo 
                         E = 255
                         #self.logger.info("5")
-                    elif (disponible <= d.minP and d.powerAct > 0): #Si consumo por debajo del minimo y ya estoy encendido sigo encendido
+                    elif (disponible <= d.minPower and d.powerAct > 0): #Si consumo por debajo del minimo y ya estoy encendido sigo encendido
                         E = 255
                         #self.logger.info("6")
                     else:												#Si estoy consumiendo paro
                         E = 0
                 if d.tipo == "resistivo":
-                    if abs(disponible) > d.power*0.5:               #Hay me sobra o consumo mas de un 50%
-                        E = int(d.powerAct+(255*(-disponible/d.power)))                  #Hago un encendido/apagado proporcional
+                    if d.powerAct == 0 and disponible < d.minPower:         #Evito que se encienda si no hay disponible minimo
+                        E = 0
+                    elif abs(disponible) > d.power*0.5:                       #Me sobra o consumo mas de un 50%
+                        E = int(d.powerAct+(255*(-disponible/d.power)))     #Hago un encendido/apagado proporcional
                         #self.logger.info("7")
                     elif abs(disponible) > d.power*0.25:
                         E = int(d.powerAct+(255*(-disponible/d.power)/2))
@@ -361,7 +363,8 @@ class instalacion:
                 E = 0									#Si no hay que repartir execentes, paro
                 #self.logger.info("13")
             
-            #self.logger.info("comparo %s con %s" %(d.powerAct, E))
+            
+            
             if E > 255 : E = 255
             if E < 0 : E = 0
             if d.powerAct != E:
