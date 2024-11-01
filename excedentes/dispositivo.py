@@ -7,7 +7,7 @@ from filelock import Timeout, FileLock
 import paho.mqtt.client as mqtt #import the client1
 
 class dispositivo:
-	def __init__(self, tipo, nombre, power, ardu, pinconect, pinpower, hOn, hOff, consumirE, tiempoAlDia=3600,tiempoMaximo=0, minTiempoSeguidoEnMarcha=10, horaC=12, minPo=20):
+	def __init__(self, tipo, nombre, power, ardu, pinconect, pinpower, hOn, hOff, consumirE, tiempoAlDia=3600,tiempoMaximo=0, minTiempoSeguidoEnMarcha=10, horaC=12, minPo=20, tReact=0.5):
 		self.tipo = tipo
 		self.nombre=nombre
 		self.power = int(power)
@@ -25,9 +25,11 @@ class dispositivo:
 		self.tiempoDiario=tiempoAlDia*60
 		self.tiempoMaximo=tiempoMaximo*60
 		self.minTiempoSeguido = minTiempoSeguidoEnMarcha*60
-		self.setTiempoHoy(self.tiempoDiario, True)
+		#self.setTiempoHoy(self.tiempoDiario, True)
+		self.tiempoHoy = self.tiempoDiario
 		self.horaEncendido = int(time.time())-self.minTiempoSeguido
 		self.horaCorte = horaC * 3600
+		self.tiempo_reaccion = tReact
 		self.emergencia = False
 		self.modoManual = False
 
@@ -51,6 +53,7 @@ class dispositivo:
 		self.r.start()
 
 		self.setPower(0)					#Inicializo apagado
+		self.logger.info("inicio con t: %s" % self.tiempoHoy)
 	
 	def threadDiario(self):
 		while not self.kill_threads:
@@ -148,7 +151,8 @@ class dispositivo:
 			if self.powerAct > 0:
 				#self.setTiempoHoy(self.get_tiempo_hoy())				#Guarda en un archivo el timepo del dia y es capaz de recuperarlos si se reinicia
 				self.tiempoHoy = self.get_tiempo_hoy()
-				t=int(time.time())
+				self.logger.info("Tiempo hoy: %s"%self.tiempoHoy)
+			t=int(time.time())
 			self.horaEncendido = t
 			self.powerAct = powerAct
 		
