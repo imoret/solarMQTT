@@ -289,7 +289,7 @@ class instalacion:
             time.sleep(0.5)
         
     def disponible_dispositivos(self, i):
-        copy_dispositivos = dict(sorted(self.dispositivos.items(), key=lambda dis: dis[1].get_tiempo_hoy()))    # Ordeno siempre en ascendente
+        copy_dispositivos = dict(sorted(self.dispositivos.items(), key=lambda dis: dis[1].get_tiempo_hoy(), reverse=True))    # Ordeno siempre en ascendente
         copy_dispositivos = dict(list(copy_dispositivos.items())[:i+1])                                         # corto desde la posicion dada + 1
         t=int(time.time())
         hora=datetime.now().hour
