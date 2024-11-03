@@ -53,7 +53,7 @@ class dispositivo:
 		self.r.start()
 
 		self.setPower(0)					#Inicializo apagado
-		self.logger.info("inicio con t: %s" % self.tiempoHoy)
+		self.logger.info("inicio con t: %s y pmin %s" % (self.tiempoHoy, self.minPower))
 	
 	def threadDiario(self):
 		while not self.kill_threads:
