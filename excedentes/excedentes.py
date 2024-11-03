@@ -326,6 +326,7 @@ class instalacion:
 			Si el dispositivo esta apagado intentara "robar" a los de menos prioridad.
 			'''
             #self.logger.info("%s" % d.nombre)
+
             #disponible = self.excedente - self.disponible_dispositivos(d.nombre) if d.powerAct == 0 else self.excedente
             disponible = self.excedente - self.disponible_dispositivos(d.nombre)
             #self.logger.info("%s dipone de %s wh" % (d.nombre, disponible))
