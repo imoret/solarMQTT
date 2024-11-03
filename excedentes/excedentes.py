@@ -288,31 +288,48 @@ class instalacion:
                 self.lcd.muestraProduccion(trunc(p),trunc(e))
             time.sleep(0.5)
         
-    def disponible_dispositivos(self, i):
-        copy_dispositivos = dict(sorted(self.dispositivos.items(), key=lambda dis: dis[1].get_tiempo_hoy(), reverse=True))    # Ordeno siempre en ascendente
-        copy_dispositivos = dict(list(copy_dispositivos.items())[:i+1])                                         # corto desde la posicion dada + 1
+    def disponible_dispositivos(self, nombre):
+        '''
+        copy_dispositivos = dict(list(self.dispositivos.items())[:i]) 
+        copy_dispositivos = dict(sorted(copy_dispositivos.items(), key=lambda dis: dis[1].get_tiempo_hoy(), reverse=True))    # Ordeno siempre en ascendente
+        self.logger.debug("donantes")
+        for d in copy_dispositivos.values():
+            self.logger.debug('%s %2.f'%(d.nombre,d.get_tiempo_hoy()));
+        self.logger.debug(" ")
+        #copy_dispositivos = dict(list(copy_dispositivos.items())[:i+1])                                         # corto desde la posicion dada + 1
+        '''
+        tMax = self.dispositivos[nombre].get_tiempo_hoy()
+        copy_dispositivos = self.dispositivos.copy()
+        del(copy_dispositivos[nombre])
         t=int(time.time())
         hora=datetime.now().hour
         tiempo = datetime.now().hour*3600+datetime.now().minute*60+datetime.now().second
         disp = 0
+
         for d in copy_dispositivos.values():
-            if d.pinPower >= 0 and d.powerAct > 0 and not d.modoManual and hora not in d.horasOn and not (d.tiempoHoy+tiempo >= d.horaCorte and tiempo < d.horaCorte) and (d.horaEncendido + d.minTiempoSeguido < t):
+            #self.logger.debug("    %s con t %2.f" % (d.nombre, d.get_tiempo_hoy()))
+            if tMax > d.get_tiempo_hoy() and d.pinPower >= 0 and d.powerAct > 0 and not d.modoManual and hora not in d.horasOn and not (d.tiempoHoy+tiempo >= d.horaCorte and tiempo < d.horaCorte) and (d.horaEncendido + d.minTiempoSeguido < t):
                 disp += d.consumo
-                #self.logger.debug("      %s cede %s. Total %s" % (d.nombre, d.consumo, disp))
+                self.logger.debug("%s cede %s. Total %s" % (d.nombre, d.consumo, disp))
         return(disp)
         
     def repartir(self):
         self.dispositivos = dict(sorted(self.dispositivos.items(), key=lambda dis: dis[1].get_tiempo_hoy(), reverse=(self.excedente < 0)))
-        i = 0
+        #self.logger.debug("disp---")
+        #for d in self.dispositivos.values():
+        #    self.logger.debug('%s %2.f'%(d.nombre,d.get_tiempo_hoy()));
+        #self.logger.debug("---")
+        #i = 0
         for d in self.dispositivos.values():
             ''' 
 			Si hay varios dispositivos encendidos "cediendo" su consumo el disponible puede ser positivo cuando en realidad estoy consumiendo
 			Si el dispositivo esta apagado intentara "robar" a los de menos prioridad.
 			'''
-            #self.logger.info("Reparto %s" % d.nombre)
-            disponible = self.excedente - self.disponible_dispositivos(i) if d.powerAct == 0 else self.excedente
+            #self.logger.info("%s" % d.nombre)
+            #disponible = self.excedente - self.disponible_dispositivos(d.nombre) if d.powerAct == 0 else self.excedente
+            disponible = self.excedente - self.disponible_dispositivos(d.nombre)
             #self.logger.info("%s dipone de %s wh" % (d.nombre, disponible))
-            i+=1
+            #i+=1
             t=int(time.time())
             th = (d.tiempoHoy - t + d.horaEncendido) if d.powerAct > 0 else d.tiempoHoy
             hora=datetime.now().hour
@@ -344,12 +361,12 @@ class instalacion:
                     if d.powerAct == 0 and disponible > -d.minPower:         #Evito que se encienda si no hay disponible minimo
                         E = 0
                     elif abs(disponible) > d.power*0.5:                       #Me sobra o consumo mas de un 50%
-                        E = int(d.powerAct+(255*(-disponible/d.power)))     #Hago un encendido/apagado proporcional
+                        E = int(d.powerAct+(255*(-disponible/d.power)/2))     #Hago un encendido/apagado proporcional
                         #self.logger.info("7")
                     elif abs(disponible) > d.power*0.25:
-                        E = int(d.powerAct+(255*(-disponible/d.power)/2))
-                    elif abs(disponible) > d.power*0.05:
                         E = int(d.powerAct+(255*(-disponible/d.power)/3))
+                    elif abs(disponible) > d.power*0.05:
+                        E = int(d.powerAct+(255*(-disponible/d.power)/4))
                     elif disponible < 0:
                         E = d.powerAct + 1
                         #self.logger.info("8")

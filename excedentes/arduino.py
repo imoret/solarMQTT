@@ -142,12 +142,15 @@ class arduino_MQTT(arduino):
 	def enviaComando(self,mensaje):
 		client = mqtt.Client("Solar")
 		#client.on_connect = self.on_connect
-		client.connect(self.broker_address)
+		try:
+			client.connect(self.broker_address)
 
-		topic='Arduinos/'+self.nombre+'/command'
-		client.publish(topic,mensaje)
-		client.disconnect()
-		return(True)
+			topic='Arduinos/'+self.nombre+'/command'
+			client.publish(topic,mensaje)
+			client.disconnect()
+			return(True)
+		except:
+			return(False)
 	
 	def setPin(self,nombre,valor):
 		return(self.enviaComando('{"command":"setPin", "dispositivo":"'+nombre+'", "valor":"'+str(valor)+'"}'))
