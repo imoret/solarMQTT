@@ -1,0 +1,219 @@
+<html>
+  <head>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
+    />
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      type="text/javascript"
+      src="https://www.gstatic.com/charts/loader.js"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"
+      type="text/javascript"
+    ></script>
+    <script type="text/javascript">
+      google.charts.load("current", { packages: ["gauge"] });
+      google.charts.setOnLoadCallback(drawChart);
+
+      var produccion = 0;
+      var excedente = 0;
+      var consumo = 0;
+      var termoState = 1;
+      var termoConsumo = 0;
+
+      function drawChart() {
+        var data_produccion = google.visualization.arrayToDataTable([
+          ["Label", "Value"],
+          ["Produccion", 0],
+        ]);
+
+        var data_excedente = google.visualization.arrayToDataTable([
+          ["Label", "Value"],
+          ["Excedente", 0],
+        ]);
+
+        var data_consumo = google.visualization.arrayToDataTable([
+          ["Label", "Value"],
+          ["Consumo", 0],
+        ]);
+
+        var data_termo = google.visualization.arrayToDataTable([
+          ["Label", "Value"],
+          ["Termo", 0],
+        ]);
+
+        var options_produccion = {
+          width: 400,
+          height: 120,
+          redFrom: 0,
+          redTo: 1250,
+          yellowFrom: 1250,
+          yellowTo: 3750,
+          greenFrom: 3750,
+          greenTo: 5000,
+          minorTicks: 5,
+          min: 0,
+          max: 5000,
+        };
+
+        var options_excedente = {
+          width: 480,
+          height: 144,
+          redFrom: 3500,
+          redTo: 5000,
+          yellowFrom: 2000,
+          yellowTo: 3500,
+          greenFrom: -300,
+          greenTo: 300,
+          minorTicks: 5,
+          min: -5000,
+          max: 5000,
+        };
+
+        var options_consumo = {
+          width: 400,
+          height: 120,
+          redFrom: 7500,
+          redTo: 10000,
+          yellowFrom: 5000,
+          yellowTo: 7500,
+          greenFrom: 0,
+          greenTo: 2000,
+          minorTicks: 5,
+          min: 0,
+          max: 10000,
+        };
+
+        var options_termo = {
+          width: 400,
+          height: 120,
+          redFrom: 1350,
+          redTo: 1800,
+          yellowFrom: 450,
+          yellowTo: 1350,
+          greenFrom: 0,
+          greenTo: 1350,
+          minorTicks: 5,
+          min: 0,
+          max: 1800,
+        };
+
+        var chart_produccion = new google.visualization.Gauge(
+          document.getElementById("chart_produccion_div")
+        );
+        var chart_excedente = new google.visualization.Gauge(
+          document.getElementById("chart_excedente_div")
+        );
+        var chart_consumo = new google.visualization.Gauge(
+          document.getElementById("chart_consumo_div")
+        );
+        var chart_termo = new google.visualization.Gauge(
+          document.getElementById("chart_termo")
+        );
+
+        chart_produccion.draw(data_produccion, options_produccion);
+        chart_excedente.draw(data_excedente, options_excedente);
+        chart_consumo.draw(data_consumo, options_consumo);
+        chart_termo.draw(data_termo, options_termo);
+
+        setInterval(function () {
+          data_produccion.setValue(0, 1, produccion);
+          chart_produccion.draw(data_produccion, options_produccion);
+        }, 500);
+
+        setInterval(function () {
+          data_excedente.setValue(0, 1, excedente);
+          chart_excedente.draw(data_excedente, options_excedente);
+        }, 500);
+
+        setInterval(function () {
+          data_consumo.setValue(0, 1, consumo);
+          chart_consumo.draw(data_consumo, options_consumo);
+        }, 500);
+
+        setInterval(function () {
+          data_termo.setValue(0, 1, termoConsumo);
+          chart_termo.draw(data_termo, options_termo);
+        }, 500);
+      }
+    </script>
+    <script type="text/javascript" language="javascript">
+      var mqtt;
+      var reconnectTimeout = 2000;
+      var host = "192.168.2.105";
+      var port = 1884;
+
+      function onConnect() {
+        console.log("Conectado");
+        mqtt.subscribe("SolarMQTT/instalacion/status");
+        mqtt.subscribe("Dispositivos/termo/status");
+        //message = new Paho.MQTT.Message("Hola mundo");
+        //message.destinationName = "prova"
+        //mqtt.send(message);
+      }
+
+      function onFailure() {
+        console.log("Conexion fallida a " + host);
+        setTimeout(MQTTconnect, reconnectTimeout);
+      }
+
+      function onMessageArrived(msg) {
+        out_msg = "Recibido:" + msg.payloadString + "<br>";
+        out_msg = out_msg + " Topic:" + msg.destinationName;
+        console.log(out_msg);
+
+        if (msg.destinationName == "SolarMQTT/instalacion/status") {
+          const dataJSON = JSON.parse(msg.payloadString);
+          //console.log("Consumo:" + dataJSON.consumo);
+          produccion = dataJSON.produccion;
+          excedente = dataJSON.excedente;
+          consumo = dataJSON.consumo;
+        }
+        if (msg.destinationName == "Dispositivos/termo/status") {
+          const dataJSON = JSON.parse(msg.payloadString);
+          termoState = dataJSON.estado;
+          termoConsumo = dataJSON.consumo;
+          //console.log("Termo estado: "+termoState+ " cosumo: "+termoConsumo);
+        }
+      }
+
+      function MQTTconnect() {
+        console.log("Conectando a " + host + " " + port);
+        mqtt = new Paho.MQTT.Client(host, port, "cielnteJS");
+        var options = {
+          timeout: 3,
+          onSuccess: onConnect,
+          onFailure: onFailure,
+        };
+
+        mqtt.onMessageArrived = onMessageArrived;
+        mqtt.connect(options);
+      }
+    </script>
+  </head>
+  <body>
+    <div id="instalacion_status" class="container">
+      <div class="row" style="background-color: rgb(230, 139, 21)">
+        <div id="chart_produccion_div" class="col align-self-end"></div>
+        <div id="chart_excedente_div" class="col align-self-center"></div>
+        <div id="chart_consumo_div" class="col align-self-end"></div>
+      </div>
+    </div>
+    <div id="dispositivos" class="container">
+      <div class="row" style="background-color: aquamarine">
+        <div id="chart_termo" class="col align-self-center"></div>
+      </div>
+    </div>
+    <script>
+      MQTTconnect();
+    </script>
+  </body>
+</html>

@@ -56,7 +56,7 @@ class instalacion:
 				
                 #Preparo el MQTT
                 self.broker_address = conf['data']['broker_address']
-                self.mqtt_client = mqtt.Client("solar_MQTT")
+                self.mqtt_client = mqtt.Client("solar_MQTT_dev")
                 self.mqtt_client.on_message = self.on_message 
                 self.mqtt_client.on_connect = self.on_connect
                 self.mqtt_client.on_disconnect = self.on_disconnect
@@ -66,7 +66,7 @@ class instalacion:
                 self.mqtt_client.connect(self.broker_address)
                 
                 self.logger.info("Cargando inversores")
-                for i in conf['inversores']:				#Lo recorro pero se que solo hay uno
+                for i in conf['inversores']:				
                     aux = fronius(i['nombre'],i['ip'])
                     self.inversores[i['nombre']] = aux
                     
@@ -151,12 +151,12 @@ class instalacion:
                         destino = comandoJson['destino']
                         nombre = comandoJson['nombre'] 
                         
-                        client = mqtt.Client("Solar")
-                        client.connect(self.broker_address)
+                        #client = mqtt.Client("Solar")
+                        #self.mqtt_client.connect(self.broker_address)
 
                         topic=destino+'/'+nombre+'/'+canal
-                        client.publish(topic,decoded_message)
-                        client.disconnect()
+                        self.mqtt_client.publish(topic,decoded_message)
+                        #self.mqtt_client.disconnect()
                             
                             #self.logger.debug("Proceso: %s %s %s msg %s" % (canal, destino, nombre, decoded_message))
                             #procesandoComando = threading.Thread(target=ard.publica_comando, args=(decoded_message, canal, destino, nombre))
@@ -283,9 +283,20 @@ class instalacion:
                 p += i.getProduccion()
             self.excedente = e
             self.produccion = p
-            #self.logger.info("Produccion %s Excedente %s" % (p,e))
             if self.lcd:   
                 self.lcd.muestraProduccion(trunc(p),trunc(e))
+
+            message = '{"produccion":%s, "excedente":%s, "consumo":%s}' %(p,e,p+e)
+            destino = 'SolarMQTT'
+            nombre = 'instalacion'
+            canal = 'status'
+                        
+            #self.mqtt_client.connect(self.broker_address)
+
+            topic=destino+'/'+nombre+'/'+canal
+            self.mqtt_client.publish(topic,message)
+            #self.mqtt_client.disconnect()
+
             time.sleep(0.5)
         
     def disponible_dispositivos(self, i):
