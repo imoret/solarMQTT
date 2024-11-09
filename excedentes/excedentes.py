@@ -310,7 +310,9 @@ class instalacion:
             #self.logger.debug("    %s con t %2.f" % (d.nombre, d.get_tiempo_hoy()))
             if tMax > d.get_tiempo_hoy() and d.pinPower >= 0 and d.powerAct > 0 and not d.modoManual and hora not in d.horasOn and not (d.tiempoHoy+tiempo >= d.horaCorte and tiempo < d.horaCorte) and (d.horaEncendido + d.minTiempoSeguido < t):
                 disp += d.consumo
-                self.logger.debug("%s cede %s. Total %s" % (d.nombre, d.consumo, disp))
+                #self.logger.debug("%s cede %s. Total %s" % (d.nombre, d.consumo, disp))
+        #Si el disponible supera la produccion supongo que hay consumos sin actualizar. Pongo el disponible a 0 para que ni se encienda ni se apague nada.
+        if disp > self.produccion: disp = 0
         return(disp)
         
     def repartir(self):
@@ -349,7 +351,7 @@ class instalacion:
                 E = 255
                 #self.logger.info("4")
             elif (d.consumExcedente) or (d.tiempoHoy > 0):			#Si hay que consumir escedentes
-                if d.tipo =="capacitativo":
+                if d.tipo == "capacitativo":
                     if disponible <= -(d.power-(d.minPower/2)) :		#Si hay disponible suficiente enciendo 
                         E = 255
                         #self.logger.info("5")
