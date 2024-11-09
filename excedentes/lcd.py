@@ -92,9 +92,7 @@ class lcd:
         sol = SunTimes(self.longitud,self.latitud)
         salidaSol = sol.riselocal(hoy)
         puestaSol = sol.setlocal(hoy)
-        #ahora = datetime.now().replace(tzinfo=timezone.utc)
         ahora = zona_horaria.localize(datetime.now().replace(tzinfo=None))
-
         self.lcdLuz = True if ahora > salidaSol and ahora < puestaSol else False
         try:
             self.lcd.backlight_enabled = self.lcdLuz
