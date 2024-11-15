@@ -28,6 +28,16 @@
       var consumo = 0;
       var termoState = 1;
       var termoConsumo = 0;
+      var PozoState = 1;
+      var PozoConsumo = 0;  
+      var H1State = 1;    
+      var H1Consumo = 0;
+      var H2State = 1;    
+      var H2Consumo = 0;
+      var H3State = 1;    
+      var H3Consumo = 0;
+      var H4State = 1;    
+      var H4Consumo = 0;
 
       function drawChart() {
         var data_produccion = google.visualization.arrayToDataTable([
@@ -48,6 +58,31 @@
         var data_termo = google.visualization.arrayToDataTable([
           ["Label", "Value"],
           ["Termo", 0],
+        ]);
+
+        var data_Pozo = google.visualization.arrayToDataTable([
+          ["Label", "Value"],
+          ["Pozo", 0],
+        ]);
+
+        var data_H1 = google.visualization.arrayToDataTable([
+          ["Label", "Value"],
+          ["H1", 0],
+        ]);
+
+        var data_H2 = google.visualization.arrayToDataTable([
+          ["Label", "Value"],
+          ["H2", 0],
+        ]);
+
+        var data_H3 = google.visualization.arrayToDataTable([
+          ["Label", "Value"],
+          ["H3", 0],
+        ]);
+
+        var data_H4 = google.visualization.arrayToDataTable([
+          ["Label", "Value"],
+          ["H4", 0],
         ]);
 
         var options_produccion = {
@@ -93,8 +128,8 @@
         };
 
         var options_termo = {
-          width: 400,
-          height: 120,
+          width: 300 ,
+          height: 90,
           redFrom: 1350,
           redTo: 1800,
           yellowFrom: 450,
@@ -104,6 +139,66 @@
           minorTicks: 5,
           min: 0,
           max: 1800,
+        };
+
+        var options_Pozo = {
+          width: 300,
+          height: 90,
+          redFrom: 280,
+          redTo: 300,
+          yellowFrom: 230,
+          yellowTo: 280,
+          minorTicks: 5,
+          min: 0,
+          max: 300,
+        };
+
+        var options_H1 = {
+          width: 300,
+          height: 90,
+          redFrom: 280,
+          redTo: 300,
+          yellowFrom: 230,
+          yellowTo: 280,
+          minorTicks: 5,
+          min: 0,
+          max: 300,
+        };
+
+        var options_H2 = {
+          width: 300,
+          height: 90,
+          redFrom: 280,
+          redTo: 300,
+          yellowFrom: 230,
+          yellowTo: 280,
+          minorTicks: 5,
+          min: 0,
+          max: 300,
+        };
+
+        var options_H3 = {
+          width: 300,
+          height: 90,
+          redFrom: 280,
+          redTo: 300,
+          yellowFrom: 230,
+          yellowTo: 280,
+          minorTicks: 5,
+          min: 0,
+          max: 300,
+        };
+
+        var options_H4 = {
+          width: 300,
+          height: 90,
+          redFrom: 280,
+          redTo: 300,
+          yellowFrom: 230,
+          yellowTo: 280,
+          minorTicks: 5,
+          min: 0,
+          max: 300,
         };
 
         var chart_produccion = new google.visualization.Gauge(
@@ -118,11 +213,31 @@
         var chart_termo = new google.visualization.Gauge(
           document.getElementById("chart_termo")
         );
+        var chart_Pozo = new google.visualization.Gauge(
+          document.getElementById("chart_Pozo")
+        );
+        var chart_H1 = new google.visualization.Gauge(
+          document.getElementById("chart_H1")
+        );
+        var chart_H2 = new google.visualization.Gauge(
+          document.getElementById("chart_H2")
+        );
+        var chart_H3 = new google.visualization.Gauge(
+          document.getElementById("chart_H3")
+        );
+        var chart_H4 = new google.visualization.Gauge(
+          document.getElementById("chart_H4")
+        );
 
         chart_produccion.draw(data_produccion, options_produccion);
         chart_excedente.draw(data_excedente, options_excedente);
         chart_consumo.draw(data_consumo, options_consumo);
         chart_termo.draw(data_termo, options_termo);
+        chart_Pozo.draw(data_Pozo, options_Pozo);
+        chart_H1.draw(data_H1, options_H1);
+        chart_H2.draw(data_H2, options_H2);
+        chart_H3.draw(data_H3, options_H3);
+        chart_H4.draw(data_H4, options_H4);
 
         setInterval(function () {
           data_produccion.setValue(0, 1, produccion);
@@ -143,6 +258,31 @@
           data_termo.setValue(0, 1, termoConsumo);
           chart_termo.draw(data_termo, options_termo);
         }, 500);
+
+        setInterval(function () {
+          data_Pozo.setValue(0, 1, PozoState);
+          chart_Pozo.draw(data_Pozo, options_Pozo);
+        }, 500);
+
+        setInterval(function () {
+          data_H1.setValue(0, 1, H1Consumo);
+          chart_H1.draw(data_H1, options_H1);
+        }, 500);
+
+        setInterval(function () {
+          data_H2.setValue(0, 1, H2Consumo);
+          chart_H2.draw(data_H2, options_H2);
+        }, 500);
+
+        setInterval(function () {
+          data_H3.setValue(0, 1, H3Consumo);
+          chart_H3.draw(data_H3, options_H3);
+        }, 500);
+
+        setInterval(function () {
+          data_H4.setValue(0, 1, H4Consumo);
+          chart_H4.draw(data_H4, options_H4);
+        }, 500);
       }
     </script>
     <script type="text/javascript" language="javascript">
@@ -155,6 +295,11 @@
         console.log("Conectado");
         mqtt.subscribe("SolarMQTT/instalacion/status");
         mqtt.subscribe("Dispositivos/termo/status");
+        mqtt.subscribe("Dispositivos/Pozo/status");
+        mqtt.subscribe("Shellys/H1/status/switch:0");
+        mqtt.subscribe("Shellys/H2/status/switch:0");
+        mqtt.subscribe("Shellys/H3/status/switch:0");
+        mqtt.subscribe("Shellys/H4/status/switch:0");
         //message = new Paho.MQTT.Message("Hola mundo");
         //message.destinationName = "prova"
         //mqtt.send(message);
@@ -183,6 +328,37 @@
           termoConsumo = dataJSON.consumo;
           //console.log("Termo estado: "+termoState+ " cosumo: "+termoConsumo);
         }
+        if (msg.destinationName == "Dispositivos/Pozo/status") {
+          const dataJSON = JSON.parse(msg.payloadString);
+          PozoState = dataJSON.estado;
+          PozoConsumo = dataJSON.consumo;
+          //console.log("Termo estado: "+termoState+ " cosumo: "+termoConsumo);
+        }
+
+        if (msg.destinationName == 'Shellys/H1/status/switch:0') {
+          const dataJSON = JSON.parse(msg.payloadString);
+          H1State = 1;    
+          H1Consumo = dataJSON.apower;
+          console.log("H1 consumo "+H1Consumo+" - "+dataJSON.apower)
+        }
+
+        if (msg.destinationName == 'Shellys/H2/status/switch:0') {
+          const dataJSON = JSON.parse(msg.payloadString);
+          H1State = 1;    
+          H1Consumo = dataJSON.apower;
+        }
+
+        if (msg.destinationName == 'Shellys/H3/status/switch:0') {
+          const dataJSON = JSON.parse(msg.payloadString);
+          H1State = 1;    
+          H1Consumo = dataJSON.apower;
+        }
+
+        if (msg.destinationName == 'Shellys/H4/status/switch:0') {
+          const dataJSON = JSON.parse(msg.payloadString);
+          H1State = 1;    
+          H1Consumo = dataJSON.apower;
+        }
       }
 
       function MQTTconnect() {
@@ -209,7 +385,81 @@
     </div>
     <div id="dispositivos" class="container">
       <div class="row" style="background-color: aquamarine">
-        <div id="chart_termo" class="col align-self-center"></div>
+
+        <div class="col align-self-center">
+          <div id="chart_termo" class="col align-self-center"></div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitch_termo_manual" >
+            <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">Manual</label>
+          </div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitch_termo_on" checked disabled>
+            <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">On</label>
+          </div>
+        </div>
+
+        <div class="col align-self-center">
+          <div id="chart_Pozo" class="col align-self-center"></div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitch_Pozo_manual" >
+            <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">Manual</label>
+          </div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitch_Pozo_on" checked disabled>
+            <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">On</label>
+          </div>
+        </div>
+        
+        <div class="col align-self-center">
+          <div id="chart_H1" class="col align-self-center"></div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitch_H1_manual" >
+            <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">Manual</label>
+          </div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitch_H1_on" checked disabled>
+            <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">On</label>
+          </div>
+        </div>
+
+        <div class="col align-self-center">
+          <div id="chart_H2" class="col align-self-center"></div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitch_H2_manual" >
+            <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">Manual</label>
+          </div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitch_H2_on" disabled>
+            <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">On</label>
+          </div>
+        </div>
+
+        <div class="col align-self-center">
+          <div id="chart_H3" class="col align-self-center"></div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitch_H3_manual" >
+            <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">Manual</label>
+          </div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitch_H3_on" checked disabled>
+            <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">On</label>
+          </div>
+        </div>
+
+        <div class="col align-self-center">
+          <div id="chart_H4" class="col align-self-center"></div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitch_H4_manual" >
+            <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">Manual</label>
+          </div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitch_H4_on" checked disabled>
+            <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">On</label>
+          </div>
+        </div>
+
+          </div>
+        </div>
       </div>
     </div>
     <script>
