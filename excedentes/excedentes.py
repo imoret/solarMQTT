@@ -51,6 +51,9 @@ class instalacion:
                     lat = conf['data']['lat']
                     lon = conf['data']['lon']
                     self.lcd = lcd(lat, lon)
+                    self.lcd_control = threading.Thread(target=self.thread_lcd)
+                    self.lcd_control.daemon = True
+                    self.lcd_control.start()
                 else:
                     self.lcd = False
 				
@@ -182,6 +185,14 @@ class instalacion:
             self.mqtt_client.loop_forever()
             self.logger.error("Cliente MQTT desconectado!!!")
             time.sleep(4)
+            
+    def thread_lcd(self):
+        while not kill_threads:
+            time.sleep(0.5)
+            self.lcd.muestraProduccion(trunc(self.produccion),trunc(self.excedente))
+            time.sleep(0.5)
+            self.lcd.muestraProduccion(trunc(self.produccion),trunc(self.excedente))
+            self.lcd.muestra_dispositivos(self.dispositivos.values())
   
     ################ Al conectar MQTT #################
     def on_connect(self, client, userdata, flags, rc):
@@ -262,13 +273,13 @@ class instalacion:
             if destino == "Shellys":
                 newPower = 255 if str(msg["output"]) == 'True' else 0
                 self.dispositivos[nombre].setStatus(newPower, msg["apower"])
-                if self.lcd:
-                    self.lcd.muestra_dispositivos(self.dispositivos.values())
+                #if self.lcd:
+                #    self.lcd.muestra_dispositivos(self.dispositivos.values())
 
             if destino == "Dispositivos":
                 self.dispositivos[nombre].setStatus(msg['estado'], msg['consumo'])
-                if self.lcd:
-                    self.lcd.muestra_dispositivos(self.dispositivos.values())
+                #if self.lcd:
+                #    self.lcd.muestra_dispositivos(self.dispositivos.values())
                 #self.logger.debug("%s status:%s consumo:" %(nombre, str(self.dispositivos[nombre].powerAct), str(self.dispositivos[nombre].consumo)))
 
             if destino == "Arduinos":
@@ -284,8 +295,8 @@ class instalacion:
             self.excedente = e
             self.produccion = p
             #self.logger.info("Produccion %s Excedente %s" % (p,e))
-            if self.lcd:   
-                self.lcd.muestraProduccion(trunc(p),trunc(e))
+            #if self.lcd:   
+            #    self.lcd.muestraProduccion(trunc(p),trunc(e))
             time.sleep(0.5)
         
     def disponible_dispositivos(self, nombre):
@@ -360,6 +371,8 @@ class instalacion:
                         #self.logger.info("6")
                     else:												#Si estoy consumiendo paro
                         E = 0
+                        #self.logger.info("7")
+
                 if d.tipo == "resistivo":
                     if d.powerAct == 0 and disponible > -d.minPower:         #Evito que se encienda si no hay disponible minimo
                         E = 0
