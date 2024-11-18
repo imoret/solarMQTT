@@ -3,7 +3,7 @@
 #include "dispositivos.h"
 
 
-const String nombre = "ard0";
+const String nombre = "ard1";
 
 String inputString = "";
 bool stringComplete = false;
