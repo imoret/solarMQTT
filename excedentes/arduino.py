@@ -136,8 +136,8 @@ class arduino_serial(arduino):
 		self.enviaComando(msg)
 		
 	def subscribe(self):
-		subscribe("Arduinos/%s/event" % self.nombre)
-		subscribe("Arduinos/%s/online" % self.nombre)
+		self.client.subscribe("Arduinos/%s/event" % self.nombre)
+		self.client.subscribe("Arduinos/%s/online" % self.nombre)
 
 #arduino conectado por MQTT	
 class arduino_MQTT(arduino):	
