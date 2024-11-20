@@ -151,11 +151,11 @@ class arduino_MQTT(arduino):
 		#client = mqtt.Client("Solar")
 		#client.on_connect = self.on_connect
 		try:
-			self.client.connect(self.broker_address)
+			#self.client.connect(self.broker_address)
 
 			topic='Arduinos/'+self.nombre+'/command'
 			self.client.publish(topic,mensaje)
-			self.client.disconnect()
+			#self.client.disconnect()
 			return(True)
 		except:
 			return(False)
@@ -186,11 +186,11 @@ class shelly(arduino):
 	def enviaComando(self, mensaje):
 		#client = mqtt.Client("Solar")
 		#client.on_connect = self.on_connect
-		self.client.connect(self.broker_address)
+		#self.client.connect(self.broker_address)
 		
 		topic='Shellys/'+self.nombre+'/rpc'
 		self.client.publish(topic,mensaje)
-		self.client.disconnect()
+		#self.client.disconnect()
 		return(True)
 	
 	def setPin(self, nombre, valor):
