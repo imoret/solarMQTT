@@ -31,10 +31,12 @@ class pin:
 	
 #Arduino "metaClase"
 class arduino:
-	def __init__(self,nombre):
+	def __init__(self,nombre, broker_address, mqtt_client):
 		self.nombre=nombre
 		self.online = True
 		self.kill_threads = False
+		self.broker_address = broker_address
+		self.client = mqtt_client
 		
 		#Defino los pines
 		self.pin = []
@@ -52,10 +54,15 @@ class arduino:
 		fhd.setFormatter(formatter)
 		self.logger.addHandler(fhd)
 
+		self.subscribe()
+
+	def subscribe(self):
+		pass
+
 #Arduino conectado por puerto serie		
 class arduino_serial(arduino):	
-	def __init__(self,nombre,pto):
-		super().__init__(nombre)
+	def __init__(self,nombre,pto, broker_address, mqtt_client):
+		super().__init__(nombre, broker_address, mqtt_client)
 		self.pto=pto
 		self.puerto = self.creaPuerto(pto)
 		self.semaforoCom = threading.Semaphore(1)	#Semaforo para maniobrar el arduino
@@ -128,26 +135,27 @@ class arduino_serial(arduino):
 		self.logger.info("Hago setup:%s-" % msg)
 		self.enviaComando(msg)
 		
-	def subscribe(self, client):
-		client.subscribe("Arduinos/%s/event" % self.nombre)
-		client.subscribe("Arduinos/%s/online" % self.nombre)
+	def subscribe(self):
+		self.client.subscribe("Arduinos/%s/event" % self.nombre)
+		self.client.subscribe("Arduinos/%s/online" % self.nombre)
 
 #arduino conectado por MQTT	
 class arduino_MQTT(arduino):	
-	def __init__(self,nombre,broker_address):
-		super().__init__(nombre)
-		self.broker_address = broker_address
+	def __init__(self,nombre, broker_address, mqtt_client):
+		super().__init__(nombre, broker_address, mqtt_client)
+		#self.broker_address = broker_address
+		#self.client = mqtt_client
 		self.conexion = "MQTT"
 
 	def enviaComando(self,mensaje):
-		client = mqtt.Client("Solar")
+		#client = mqtt.Client("Solar")
 		#client.on_connect = self.on_connect
 		try:
-			client.connect(self.broker_address)
+			#self.client.connect(self.broker_address)
 
 			topic='Arduinos/'+self.nombre+'/command'
-			client.publish(topic,mensaje)
-			client.disconnect()
+			self.client.publish(topic,mensaje)
+			#self.client.disconnect()
 			return(True)
 		except:
 			return(False)
@@ -159,9 +167,9 @@ class arduino_MQTT(arduino):
 		self.logger.info("Reseteando...")
 		self.enviaComando('{"command":"reset"}')
 
-	def subscribe(self, client):
-		client.subscribe("Arduinos/%s/event" % self.nombre)
-		client.subscribe("Arduinos/%s/online" % self.nombre)
+	def subscribe(self):
+		self.client.subscribe("Arduinos/%s/event" % self.nombre)
+		self.client.subscribe("Arduinos/%s/online" % self.nombre)
   
 	def setup(self, tipo, nombre, pin, pinPower):
 		msg = '{"command":"setup", "tipo":"'+tipo+'","nombre":"'+nombre+'", "pin":'+str(pin)+', "pinPower":'+str(pinPower)+'}'
@@ -169,20 +177,20 @@ class arduino_MQTT(arduino):
 		self.enviaComando(msg)
 
 class shelly(arduino):
-	def __init__(self, nombre, broker_address):
-		super().__init__(nombre)
-		self.broker_address = broker_address
+	def __init__(self, nombre, broker_address, mqtt_client):
+		super().__init__(nombre, broker_address, mqtt_client)
+		#self.broker_address = broker_address
 		delattr(self,"pin")
 		self.conexion = "MQTT"
 
 	def enviaComando(self, mensaje):
-		client = mqtt.Client("Solar")
+		#client = mqtt.Client("Solar")
 		#client.on_connect = self.on_connect
-		client.connect(self.broker_address)
+		#self.client.connect(self.broker_address)
 		
 		topic='Shellys/'+self.nombre+'/rpc'
-		client.publish(topic,mensaje)
-		client.disconnect()
+		self.client.publish(topic,mensaje)
+		#self.client.disconnect()
 		return(True)
 	
 	def setPin(self, nombre, valor):
@@ -192,9 +200,9 @@ class shelly(arduino):
 	def reset(self):
 		self.enviaComando('{"id":1, "method":"Shelly.Reboot"}')
   
-	def subscribe(self, client):
-		client.subscribe("Shellys/%s/status/switch:0" % self.nombre)
-		client.subscribe("Shellys/%s/online" % self.nombre)
+	def subscribe(self):
+		self.client.subscribe("Shellys/%s/status/switch:0" % self.nombre)
+		self.client.subscribe("Shellys/%s/online" % self.nombre)
 
 	def setup(self):
 		pass

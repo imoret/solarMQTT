@@ -75,21 +75,21 @@ class instalacion:
                     
                 self.logger.info("Cargando arduinos serial")
                 for a in conf['arduinos_serial']:
-                    aux=arduino_serial(a['nombre'],a['puerto'])
+                    aux=arduino_serial(a['nombre'],a['puerto'], self.broker_address, self.mqtt_client)
                     self.arduinos[a['nombre']]=aux
-                    self.arduinos[a['nombre']].subscribe(self.mqtt_client)
+                    #self.arduinos[a['nombre']].subscribe()
 
                 self.logger.info("Cargando arduinos MQTT")   
                 for l in conf['arduinos_MQTT']:
-                    aux=arduino_MQTT(l['nombre'],self.broker_address)
+                    aux=arduino_MQTT(l['nombre'],self.broker_address, self.mqtt_client)
                     self.arduinos[l['nombre']]=aux
-                    self.arduinos[l['nombre']].subscribe(self.mqtt_client)
+                    #self.arduinos[l['nombre']].subscribe()
                     
                 self.logger.info("Cargando Shellys")
                 for s in conf['shellys']:
-                    aux=shelly(s['nombre'],self.broker_address)
+                    aux=shelly(s['nombre'], self.broker_address, self.mqtt_client)
                     self.arduinos[s['nombre']]=aux
-                    self.arduinos[s['nombre']].subscribe(self.mqtt_client)
+                    #self.arduinos[s['nombre']].subscribe()
                 
                 self.logger.info("Cargando dispositivos")
                 for d in conf['dispositivos']:
@@ -294,6 +294,12 @@ class instalacion:
                 p += i.getProduccion()
             self.excedente = e
             self.produccion = p
+            #self.mqtt_client.connect(self.broker_address)
+            topic='Instalacion/status'
+            mensaje = '{"produccion:%f, excedente:%f}' %(p,e)
+            self.mqtt_client.publish(topic,mensaje)
+            #self.mqtt_client.disconnect()
+
             #self.logger.info("Produccion %s Excedente %s" % (p,e))
             #if self.lcd:   
             #    self.lcd.muestraProduccion(trunc(p),trunc(e))
