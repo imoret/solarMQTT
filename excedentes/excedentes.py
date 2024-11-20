@@ -59,7 +59,7 @@ class instalacion:
 				
                 #Preparo el MQTT
                 self.broker_address = conf['data']['broker_address']
-                self.mqtt_client = mqtt.Client("solar_MQTT_")
+                self.mqtt_client = mqtt.Client("solar_MQTT")
                 self.mqtt_client.on_message = self.on_message 
                 self.mqtt_client.on_connect = self.on_connect
                 self.mqtt_client.on_disconnect = self.on_disconnect
@@ -294,11 +294,11 @@ class instalacion:
                 p += i.getProduccion()
             self.excedente = e
             self.produccion = p
-            self.mqtt_client.connect(self.broker_address)
+            #self.mqtt_client.connect(self.broker_address)
             topic='Instalacion/status'
             mensaje = '{"produccion:%f, excedente:%f}' %(p,e)
-            self.client.publish(topic,mensaje)
-            self.client.disconnect()
+            self.mqtt_client.publish(topic,mensaje)
+            #self.mqtt_client.disconnect()
 
             #self.logger.info("Produccion %s Excedente %s" % (p,e))
             #if self.lcd:   
