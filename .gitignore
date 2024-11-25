@@ -21,3 +21,5 @@
 /excedentes/__pycache__
 /excedentes_old/salidaSol.py
 /excedentes_old/solsol.py
+web/excedentes/__pycache__/views.cpython-310.pyc
+web/solarMQTT/__pycache__/settings.cpython-310.pyc
