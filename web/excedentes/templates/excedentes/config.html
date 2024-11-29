@@ -1,0 +1,98 @@
+{% extends 'excedentes/base.html' %}
+
+{% block content %}
+<div class="content container cajita">
+    <h1>Generar nuevo archivo de configuración <a href="{% url 'nuevo_archivo' %}"><button type="button">ACEPTAR</button></a></h1>
+</div>
+<div class="content container">
+    <div class="cajita">
+        <h2>INSTALACION</h2>
+        {% for instalacion in instalaciones %}
+            <div>
+                <h3>
+                    <p>Max red: {{ instalacion.maxred }}</p>
+                    <p>Local IP: {{ instalacion.localIP }}</p>
+                    <p>Broker address: {{ instlacion.broker_address }}</p>
+                    <p>Latitud: {{ instalacion.lat }}</p>
+                    <p>Longitud: {{ instalacion.lon }}</p>
+                    <p>LCD: {{ instalacion.lcd }}</p>
+                    <h1><a href="/admin/excedentes/instalaciones/{{instalacion.pk}}/change/"   target="_blank"><button type="button">EDITAR</button></a></h1>
+                </h3>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="cajita">
+        <h2>INVERSORES</h2>
+        {% for inversor in inversores %}
+            <div>
+                <h3>
+                    <p>Nombre: {{ inversor.nombre }}</p>
+                    <p>IP: {{ inversor.ip }}</p>
+                </h3>
+                <h1><a href="/admin/excedentes/inversores/{{inversor.pk}}/change/"   target="_blank"><button type="button">EDITAR</button></a></h1>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="cajita">
+        <h2>ACTUADORES</h2>
+        {% for actuador in actuadores %}
+            <div>
+                <h3>
+                    <p>{{ actuador.nombre }}</p>
+                    <p>Tipo: {{ actuador.tipo }}</p>
+                    <p>Puerto: {{ actuador.puerto }}</p>
+                </h3>
+                <h1><a href="/admin/excedentes/actuadores/{{actuador.pk}}/change/"   target="_blank"><button type="button">EDITAR</button></a></h1>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="cajita">
+        <h2>DISPOSITIVOS</h2>
+        {% for dispositivo in dispositivos %}
+            <div>
+                <h3>
+                    <p>{{ dispositivo.nombre }}</p>
+                    <p>Tipo: {{ dispositivo.tipo }}</p>
+                    <p>Power: {{ dispositivo.power }}</p>
+                    <p>Actuador: {{ dispositivo.adu }}</p>
+                    <p>Pin: {{ dispositivo.pin }}</p>
+                    <p>Pin lectura consumo: {{ dispositivo.pinPower }}</p>
+                    <p>Potencia minima: {{ dispositivo.minPower }}%</p>
+                    <p>Tiempo de reaccion: {{ dispositivo.tiempo_reaccion }}''</p>
+                    <p>Modos: 
+                        <ul><li>Lunes: {{ dispositivo.modoLunes }}</li>
+                            <li>Martes: {{ dispositivo.modoMartes }}</li>
+                            <li>Miercoles: {{ dispositivo.modoMiercoles }}</li>
+                            <li>Jueves: {{ dispositivo.modoJueves }}</li>
+                            <li>Viernes:  {{ dispositivo.modoViernes }}</li>
+                            <li>Sabado:  {{ dispositivo.modoSabado }}</li>
+                            <li>Domingo:  {{ dispositivo.modoDomingo }}</li>
+                        </ul></p>
+                </h3>
+                <h1><a href="/admin/excedentes/dispositivos/{{dispositivo.pk}}/change/"   target="_blank"><button type="button">EDITAR</button></a></h1>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="cajita">
+        <h2>MODOS</h2>
+        {% for modo in modos %}
+            <div>
+                <h3>
+                    <p>{{ modo.nombre }}</p>
+                    <p>Horas encendido: {{ modo.timeOn }} </p>
+                    <p>Horas apagado: {{ modo.timeOff }}</p>
+                    <p>Consumir excedentes: {{ modo.consumirExcedente }}</p>
+                    <p>Horas de funcionamiento diario: {{ modo.tiempoAldia }}</p>
+                    <p>Maximo de horas diarias: {{ modo.tiempoMaximo }}</p>
+                    <p>Tiempo minimo seguido: {{ modo.tiempoSeguido }}</p>
+                    <p>Hora de corte: {{ modo.horaCorte }}</p>
+                </h3>
+                <h1><a href="/admin/excedentes/modos/{{modo.pk}}/change/"   target="_blank"><button type="button">EDITAR</button></a></h1>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
