@@ -32,11 +32,13 @@ class Actuadores(models.Model):
 
     def __str__(self):
         return self.nombre
+        
+void_list = list(())
 
 class Modos(models.Model):
     nombre = models.CharField(max_length=200)
-    timeOn = models.JSONField(null=True, blank=True)
-    timeOff = models.JSONField(null=True, blank=True)
+    timeOn = models.JSONField(null=False, default=void_list )
+    timeOff = models.JSONField(null=False, default=void_list )
     #timeOn = models.CharField(max_length=200, null=True, blank=True)
     #timeOff = models.CharField(max_length=200, null=True, blank=True)
     consumirExcedente = models.BooleanField(default=True)
