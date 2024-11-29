@@ -42,7 +42,7 @@ class instalacion:
         with lock:
             with open('excedentes.conf') as fileConf:
                 conf = json.load(fileConf)
-                self.nuevaConf = conf['nuevaConf']
+                #self.nuevaConf = conf['nuevaConf']
                 self.maxRed = conf['data']['maxRed']
                 self.localIP = conf['data']['localIP']
 

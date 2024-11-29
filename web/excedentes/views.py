@@ -25,7 +25,7 @@ def nuevo_archivo(request):
     capacitativos = Dispositivos.objects.filter(tipo=2)
 
     conf = {}
-    data = {'marRed':instalaciones[0].maxred, 'localIP':instalaciones[0].localIP, "broker_address": instalaciones[0].broker_address, "lat" : instalaciones[0].lat, "lon" : instalaciones[0].lon, "lcd" : instalaciones[0].lcd}
+    data = {'maxRed':instalaciones[0].maxred, 'localIP':instalaciones[0].localIP, "broker_address": instalaciones[0].broker_address, "lat" : instalaciones[0].lat, "lon" : instalaciones[0].lon, "lcd" : instalaciones[0].lcd}
     inv = []
     arduinos_serial = []
     arduinos_MQTT = []
