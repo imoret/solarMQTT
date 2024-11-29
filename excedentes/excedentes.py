@@ -296,7 +296,7 @@ class instalacion:
             self.produccion = p
             #self.mqtt_client.connect(self.broker_address)
             topic='Instalacion/status'
-            mensaje = '{"produccion:%f, excedente:%f}' %(p,e)
+            mensaje = '{"produccion":%f, "excedente":%f}' %(p,e)
             self.mqtt_client.publish(topic,mensaje)
             #self.mqtt_client.disconnect()
 
