@@ -36,8 +36,8 @@
       var consumo = 0;
       var termoState = 1;
       var termoConsumo = 0;
-      var PozoState = 1;
-      var PozoConsumo = 0;  
+      var pozoState = 1;
+      var pozoConsumo = 0;  
       var H1State = 1;    
       var H1Consumo = 0;
       var H2State = 1;    
@@ -68,9 +68,9 @@
           ["Termo", 0],
         ]);
 
-        var data_Pozo = google.visualization.arrayToDataTable([
+        var data_pozo = google.visualization.arrayToDataTable([
           ["Label", "Value"],
-          ["Pozo", 0],
+          ["pozo", 0],
         ]);
 
         var data_H1 = google.visualization.arrayToDataTable([
@@ -149,7 +149,7 @@
           max: 1800,
         };
 
-        var options_Pozo = {
+        var options_pozo = {
           width: 300,
           height: 90,
           redFrom: 280,
@@ -221,8 +221,8 @@
         var chart_termo = new google.visualization.Gauge(
           document.getElementById("chart_termo")
         );
-        var chart_Pozo = new google.visualization.Gauge(
-          document.getElementById("chart_Pozo")
+        var chart_pozo = new google.visualization.Gauge(
+          document.getElementById("chart_pozo")
         );
         var chart_H1 = new google.visualization.Gauge(
           document.getElementById("chart_H1")
@@ -241,7 +241,7 @@
         chart_excedente.draw(data_excedente, options_excedente);
         chart_consumo.draw(data_consumo, options_consumo);
         chart_termo.draw(data_termo, options_termo);
-        chart_Pozo.draw(data_Pozo, options_Pozo);
+        chart_pozo.draw(data_pozo, options_pozo);
         chart_H1.draw(data_H1, options_H1);
         chart_H2.draw(data_H2, options_H2);
         chart_H3.draw(data_H3, options_H3);
@@ -268,8 +268,8 @@
         }, 500);
 
         setInterval(function () {
-          data_Pozo.setValue(0, 1, PozoState);
-          chart_Pozo.draw(data_Pozo, options_Pozo);
+          data_pozo.setValue(0, 1, pozoState);
+          chart_pozo.draw(data_pozo, options_pozo);
         }, 500);
 
         setInterval(function () {
@@ -303,7 +303,7 @@
         console.log("Conectado");
         mqtt.subscribe("Instalacion/status");
         mqtt.subscribe("Dispositivos/termo/status");
-        mqtt.subscribe("Dispositivos/Pozo/status");
+        mqtt.subscribe("Dispositivos/pozo/status");
         mqtt.subscribe("Shellys/H1/status/switch:0");
         mqtt.subscribe("Shellys/H2/status/switch:0");
         mqtt.subscribe("Shellys/H3/status/switch:0");
@@ -336,10 +336,10 @@
           termoConsumo = dataJSON.consumo;
           //console.log("Termo estado: "+termoState+ " cosumo: "+termoConsumo);
         }
-        if (msg.destinationName == "Dispositivos/Pozo/status") {
+        if (msg.destinationName == "Dispositivos/pozo/status") {
           const dataJSON = JSON.parse(msg.payloadString);
-          PozoState = dataJSON.estado;
-          PozoConsumo = dataJSON.consumo;
+          pozoState = dataJSON.estado;
+          pozoConsumo = dataJSON.consumo;
           //console.log("Termo estado: "+termoState+ " cosumo: "+termoConsumo);
         }
 
@@ -411,13 +411,13 @@
         </div>
 
         <div class="col align-self-center">
-          <div id="chart_Pozo" class="col align-self-center"></div>
+          <div id="chart_pozo" class="col align-self-center"></div>
           <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitch_Pozo_manual" >
+            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitch_pozo_manual" >
             <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">Manual</label>
           </div>
           <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitch_Pozo_on" checked disabled>
+            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitch_pozo_on" checked disabled>
             <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">On</label>
           </div>
         </div>

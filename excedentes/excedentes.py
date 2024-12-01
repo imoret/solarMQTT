@@ -256,23 +256,16 @@ class instalacion:
         if canal == "status":
             msg=json.loads(decoded_message)
 
-#          if destino == "Shellys":
-#              d = self.dispositivos[nombre]
-#             newPower = 255 if str(msg["output"]) == 'True' else 0
-#                if newPower != d.powerAct and d.powerAct == 0:
-#                    d.horaEncendido = int(time.time())
-#                d.powerAct = newPower
-#                d.consumo = msg["apower"]
-#                #self.logger.debug("%s power puesto a:%s" %(nombre, d.powerAct))
-#                if (msg["source"] != 'init' and msg["source"] != 'MQTT' and d.modoManual == False):
-#                    #d.logger.info("Puesto en modo manual");
-#                    d.modoManual = True
-#                if ((msg["source"] == 'init' or msg["source"] == 'MQTT') and d.modoManual == True): 
-#                    #d.logger.info("Puesto en modo automatico");
-#                    d.modoManual = False
             if destino == "Shellys":
                 newPower = 255 if str(msg["output"]) == 'True' else 0
                 self.dispositivos[nombre].setStatus(newPower, msg["apower"])
+
+                if (msg["source"] != 'init' and msg["source"] != 'MQTT' and self.dispositivos[nombre].modoManual == False): 
+                    self.dispositivos[nombre].logger.info("Puesto en modo manual");
+                    self.dispositivos[nombre].modoManual=True
+                if ((msg["source"] == 'init' or msg["source"] == 'MQTT') and self.dispositivos[nombre].modoManual == True): 
+                    self.dispositivos[nombre].logger.info("Puesto en modo automatico");
+                    self.dispositivos[nombre].modoManual=False
                 #if self.lcd:
                 #    self.lcd.muestra_dispositivos(self.dispositivos.values())
 
@@ -413,7 +406,8 @@ class instalacion:
             if E < 0 : E = 0
             if d.powerAct != E:
                 if d.setPower(E):              # Si ha habido cambios y se aceptan lo muestro en la LCD
-                    self.logger.info("Produccion %s, excendente %s - Dispositivo %s con disponible %s puesto a %s" %(self.produccion, self.excedente, d.nombre, disponible, E))
+                    #self.logger.info("Produccion %s, excendente %s - Dispositivo %s con disponible %s puesto a %s" %(self.produccion, self.excedente, d.nombre, disponible, E))
+                    d.publica_actividad(self.mqtt_client)
                     time.sleep(d.tiempo_reaccion)
                     break
             
