@@ -151,14 +151,18 @@ class dispositivo:
 			if self.powerAct > 0:
 				#self.setTiempoHoy(self.get_tiempo_hoy())				#Guarda en un archivo el timepo del dia y es capaz de recuperarlos si se reinicia
 				self.tiempoHoy = self.get_tiempo_hoy()
-				self.logger.info("Tiempo hoy: %.2f" %self.tiempoHoy)
+				#self.logger.info("Tiempo hoy: %.2f" %self.tiempoHoy)
 			t=int(time.time())
 			self.horaEncendido = t
 			self.powerAct = powerAct
-		
 
 	def get_tiempo_hoy(self):
 		t=int(time.time())
 		p = self.powerAct/255 # Tanto por 100 de la potencia
 		th = self.tiempoHoy - (t - self.horaEncendido) * p
 		return(th)
+	
+	def publica_actividad(self, client):
+		mensaje = '{"timepo_hoy":%f, "manual":%s}'%(self.get_tiempo_hoy(), self.modoManual)
+		topic='Dispositivos/'+self.nombre+'/activity'
+		client.publish(topic,mensaje)
