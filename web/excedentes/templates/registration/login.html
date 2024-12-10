@@ -1,6 +1,7 @@
 {% extends 'excedentes/base.html' %}
 
 {% block content %}
+<div class="cajita">
 <h1>Login</h1>
 
 {% if form.errors %}
@@ -35,6 +36,8 @@
 </form>
 
 {# Assumes you setup the password_reset view in your URLconf #}
-<p><a href="{% url 'password_reset' %}">Lost password?</a></p>
+{# <p><a href="{% url 'password_reset' %}">Lost password?</a></p> #}
+<p><a href="https://www.disney.com">Lost password?</a></p>
 
+</div>
 {% endblock %}

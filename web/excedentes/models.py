@@ -95,4 +95,15 @@ class Dispositivos(models.Model):
     '''    
     def get_tipo(self):
         return self.dispositivo_tipo[self.tipo-1][1]
+    
+    def power_max(self):
+        return (int(self.power*1.2))
 
+    def power_medio_alto(self):
+        return(int(self.power*0.8))
+    
+    def power_medio(self):
+        return(int(self.power*0.6))
+    
+    def power_min(self):
+        return(int(self.power*0.2))

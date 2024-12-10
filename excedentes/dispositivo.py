@@ -114,9 +114,7 @@ class dispositivo:
 		lock = FileLock("excedentes.conf.lock", timeout=10)
 		try:
 			with lock:
-				self.logger.info("lock")
 				with open('excedentes.conf') as fileConf:
-					self.logger.info("with")
 					conf = json.load(fileConf)
 					for d in conf['dispositivos']:
 						if d["nombre"]==self.nombre:
@@ -163,6 +161,6 @@ class dispositivo:
 		return(th)
 	
 	def publica_actividad(self, client):
-		mensaje = '{"timepo_hoy":%f, "manual":%s}'%(self.get_tiempo_hoy(), self.modoManual)
+		mensaje = '{"tiempo_hoy":%f, "manual":%s}'%(self.get_tiempo_hoy(), 'true' if self.modoManual else 'false')
 		topic='Dispositivos/'+self.nombre+'/activity'
 		client.publish(topic,mensaje)

@@ -2,11 +2,13 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.core import serializers
 from excedentes.models import *
+from django.conf import settings
 
 # Create your views here.
 def dash_board(request):
     if request.user.is_authenticated:
-        return render(request, 'excedentes/dash_board.html', {})
+        dispositivos = Dispositivos.objects.all()
+        return render(request, 'excedentes/dash_board.html', {'dispositivos':dispositivos})
     else:
         return redirect('accounts/login/')
 
@@ -73,5 +75,11 @@ def nuevo_archivo(request):
             json.dump(conf, f, indent=4)
         print(conf)
         return render(request, 'excedentes/dash_board.html', {'data':data})
+    else:
+        return redirect('accounts/login/')
+    
+def get_data(request):
+    if request.user.is_authenticated:
+        return JsonResponse(settings.ESTADO)
     else:
         return redirect('accounts/login/')
