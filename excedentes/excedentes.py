@@ -263,9 +263,11 @@ class instalacion:
                 if (msg["source"] != 'init' and msg["source"] != 'MQTT' and self.dispositivos[nombre].modoManual == False): 
                     self.dispositivos[nombre].logger.info("Puesto en modo manual");
                     self.dispositivos[nombre].modoManual=True
+                    self.dispositivos[nombre].publica_actividad(self.mqtt_client)
                 if ((msg["source"] == 'init' or msg["source"] == 'MQTT') and self.dispositivos[nombre].modoManual == True): 
                     self.dispositivos[nombre].logger.info("Puesto en modo automatico");
                     self.dispositivos[nombre].modoManual=False
+                    self.dispositivos[nombre].publica_actividad(self.mqtt_client)
                 #if self.lcd:
                 #    self.lcd.muestra_dispositivos(self.dispositivos.values())
 
