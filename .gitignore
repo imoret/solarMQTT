@@ -50,3 +50,4 @@ web/solarMQTT/__pycache__/wsgi.cpython-310.pyc
 /web/solarMQTT/__pycache__
 /web/excedentes/__pycache__
 /web/excedentes/__pycache__/mqtt.cpython-310.pyc
+/web/db.sqlite3

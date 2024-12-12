@@ -83,3 +83,6 @@ def get_data(request):
         return JsonResponse(settings.ESTADO)
     else:
         return redirect('accounts/login/')
+    
+def setManual(request, nombre):
+    get_data()
