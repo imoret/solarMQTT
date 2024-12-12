@@ -26,10 +26,11 @@
         }, 2000);
 
         function solicitaDatos(){
-          conexion = new XMLHttpRequest();
-          conexion.onreadystatechange = procesaDatos;
-          conexion.open('GET', 'get_data', true);
-          conexion.send();
+          //conexion = new XMLHttpRequest();
+          //conexion.onreadystatechange = procesaDatos;
+          //conexion.open('GET', 'get_data', true);
+          //conexion.send();
+          conecta('get_data');
         }
 
         function procesaDatos(){
@@ -37,6 +38,10 @@
               datos = JSON.parse(conexion.responseText);
             }
             for (let d in datos["dispositivos"]){
+              let horas = datos["dispositivos"][d]["horas"]
+              let min = datos["dispositivos"][d]["min"]
+              let seg = datos["dispositivos"][d]["seg"]
+              document.getElementById("tiempoHoy_"+d).textContent=horas+":"+min+":"+seg+" hoy";
               if (datos["dispositivos"][d]["consumo"] > 0){
                 document.getElementById("boton_on_"+d).checked = true;
               }else{
@@ -51,6 +56,17 @@
               }
             }
         }
+
+      function conecta(vista){
+        conexion = new XMLHttpRequest();
+          conexion.onreadystatechange = procesaDatos;
+          conexion.open('GET', vista, true);
+          conexion.send();
+      }
+
+      function setManual(nombre){
+        conecta('setManual');
+      }
 
       function drawChart() {
         var data_produccion = google.visualization.arrayToDataTable([
@@ -169,63 +185,35 @@
             chart_{{d.nombre}}.draw(data_{{d.nombre}}, options_{{d.nombre}});
           }, 2000);
         {% endfor %}
-
-        var data_termo = google.visualization.arrayToDataTable([
-          ["Label", "Value"],
-          ["Termo", 0],
-        ]);
-
-        var options_termo = {
-          width: 300 ,
-          height: 90,
-          redFrom: 1350,
-          redTo: 1800,
-          yellowFrom: 450,
-          yellowTo: 1350,
-          greenFrom: 0,
-          greenTo: 1350,
-          minorTicks: 5,
-          min: 0,
-          max: 1800,
-        };
-    
-        var chart_termo = new google.visualization.Gauge(
-          document.getElementById("chart_termo")
-        );
-        
-        chart_termo.draw(data_termo, options_termo);
-
-        setInterval(function () {
-          data_termo.setValue(0, 1, datos['dispositivos']['termo']['consumo']);
-          chart_termo.draw(data_termo, options_termo);
-        }, 500);
       }
     </script>
     {% endblock %}
   
     {% block content %}
     <div id="instalacion_status" class="container cajita">
-      <div class="row" style="background-color: rgb(230, 139, 21)">
+      <div class="row cajita" style="background-color: rgb(230, 139, 21)">
         <div id="chart_produccion_div" class="col align-self-end"></div>
         <div id="chart_excedente_div" class="col align-self-center"></div>
         <div id="chart_consumo_div" class="col align-self-end"></div>
       </div>
     </div>
     <div id="dispositivos" class="container  cajita">
-      <div class="row" style="background-color: aquamarine">
+      <div class="row cajita" style="background-color: aquamarine">
 
       {% for d in dispositivos %}
-        <div class="col align-self-center">
+        <div class="col align-self-center cajita">
           <div id="chart_{{d.nombre}}" class="col align-self-center"></div>
+          <div class="col align-self-center" id="tiempoHoy_{{d.nombre}}">{{ d.horas }}:{{ d.min }}:{{ d.seg }}</div>
           <div class="form-check form-switch">
             {% if d.manual %}
-              <input class="form-check-input" type="checkbox" role="switch" id="boton_manual_{{d.nombre}}" checked disabled>
+              <input class="form-check-input" type="checkbox" role="switch" id="boton_manual_{{d.nombre}}" onclick=setManual("{{d.nombre}}") checked disabled>
               <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">Manual</label>
             {% else %}
-              <input class="form-check-input" type="checkbox" role="switch" id="boton_manual_{{d.nombre}}">
+              <input class="form-check-input" type="checkbox" role="switch" id="boton_manual_{{d.nombre}}" onclick=setManual("{{d.nombre}}")>
               <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">Manual</label>
             {% endif %}
           </div>
+          
           <div class="form-check form-switch">
             {% if d.consumo > 0 %}
               <input class="form-check-input" type="checkbox" role="switch" id="boton_on_{{d.nombre}}" checked disabled>

@@ -13,7 +13,7 @@ def on_connect(mqtt_client, userdata, flags, rc):
 
         dispositivos = Dispositivos.objects.all()
         for d in dispositivos:
-            settings.ESTADO['dispositivos'][d.nombre]={'consumo':0, 'tiempo_hoy':0, 'manual':False}
+            settings.ESTADO['dispositivos'][d.nombre]={'consumo':0, 'horas':0, 'min':0, 'seg':0, 'manual':False}
             actuador = Actuadores.objects.filter(nombre=d.ardu)[0]
             mqtt_client.subscribe('Dispositivos/%s/activity' % d.nombre)            
             if actuador.tipo == 1 or actuador.tipo == 2:
@@ -47,7 +47,14 @@ def on_message(mqtt_client, userdata, message):
             settings.ESTADO['dispositivos'][nombre]['consumo'] = data['consumo']
         
         if canal == 'activity':
-            settings.ESTADO['dispositivos'][nombre]['tiempo_hoy'] = data['tiempo_hoy']
+            th = -data['tiempo_hoy']
+            horas = int(th/-3600)
+            secsRemaining = abs(th)%3600
+            min = int(secsRemaining/60)
+            seg = secsRemaining%60
+            settings.ESTADO['dispositivos'][nombre]['horas'] = horas
+            settings.ESTADO['dispositivos'][nombre]['min'] = min
+            settings.ESTADO['dispositivos'][nombre]['seg'] = seg
             settings.ESTADO['dispositivos'][nombre]['manual'] = data['manual']
     #print(settings.ESTADO)
 

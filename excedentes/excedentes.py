@@ -255,7 +255,7 @@ class instalacion:
         #Si recibo un status    
         if canal == "status":
             msg=json.loads(decoded_message)
-
+            self.dispositivos[nombre].publica_actividad(self.mqtt_client)
             if destino == "Shellys":
                 newPower = 255 if str(msg["output"]) == 'True' else 0
                 self.dispositivos[nombre].setStatus(newPower, msg["apower"])
@@ -263,11 +263,11 @@ class instalacion:
                 if (msg["source"] != 'init' and msg["source"] != 'MQTT' and self.dispositivos[nombre].modoManual == False): 
                     self.dispositivos[nombre].logger.info("Puesto en modo manual");
                     self.dispositivos[nombre].modoManual=True
-                    self.dispositivos[nombre].publica_actividad(self.mqtt_client)
+                    #self.dispositivos[nombre].publica_actividad(self.mqtt_client)
                 if ((msg["source"] == 'init' or msg["source"] == 'MQTT') and self.dispositivos[nombre].modoManual == True): 
                     self.dispositivos[nombre].logger.info("Puesto en modo automatico");
                     self.dispositivos[nombre].modoManual=False
-                    self.dispositivos[nombre].publica_actividad(self.mqtt_client)
+                    #self.dispositivos[nombre].publica_actividad(self.mqtt_client)
                 #if self.lcd:
                 #    self.lcd.muestra_dispositivos(self.dispositivos.values())
 
