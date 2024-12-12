@@ -59,7 +59,7 @@ class instalacion:
 				
                 #Preparo el MQTT
                 self.broker_address = conf['data']['broker_address']
-                self.mqtt_client = mqtt.Client("solar_MQTT_dev")
+                self.mqtt_client = mqtt.Client("solar_MQTT")
                 self.mqtt_client.on_message = self.on_message 
                 self.mqtt_client.on_connect = self.on_connect
                 self.mqtt_client.on_disconnect = self.on_disconnect
