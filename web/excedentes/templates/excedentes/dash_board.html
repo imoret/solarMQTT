@@ -42,7 +42,7 @@
               let min = datos["dispositivos"][d]["min"]
               let seg = datos["dispositivos"][d]["seg"]
               document.getElementById("tiempoHoy_"+d).textContent=horas+":"+min+":"+seg+" hoy";
-              if (datos["dispositivos"][d]["consumo"] > 0){
+              if (datos["dispositivos"][d]["powerAct"] > 0){
                 document.getElementById("boton_on_"+d).checked = true;
               }else{
                 document.getElementById("boton_on_"+d).checked = false;
@@ -57,15 +57,21 @@
             }
         }
 
-      function conecta(vista){
+      function conecta(url){
         conexion = new XMLHttpRequest();
-          conexion.onreadystatechange = procesaDatos;
-          conexion.open('GET', vista, true);
-          conexion.send();
+        conexion.onreadystatechange = procesaDatos;
+        conexion.open('GET', url, true);
+        conexion.send();
       }
 
-      function setManual(nombre){
-        conecta('setManual');
+      function setManual(nm, cb){
+        url='/setManual/'+nm+'/'+cb.checked+'/'
+        conecta(url);
+      }
+
+      function set_onOff(nm, cb){
+        url='/set_onOff/'+nm+'/'+cb.checked+'/'
+        conecta(url);
       }
 
       function drawChart() {
@@ -203,23 +209,27 @@
       {% for d in dispositivos %}
         <div class="col align-self-center cajita">
           <div id="chart_{{d.nombre}}" class="col align-self-center"></div>
-          <div class="col align-self-center" id="tiempoHoy_{{d.nombre}}">{{ d.horas }}:{{ d.min }}:{{ d.seg }}</div>
+          <div class="col align-self-center" id="tiempoHoy_{{d.nombre}}">
+            {% if d.timepoHoy < 0 and d.horas != 0 %}
+              -
+            {% endif %}
+            {{ d.horas }}:{{ d.min }}:{{ d.seg }}</div>
           <div class="form-check form-switch">
             {% if d.manual %}
-              <input class="form-check-input" type="checkbox" role="switch" id="boton_manual_{{d.nombre}}" onclick=setManual("{{d.nombre}}") checked disabled>
+              <input class="form-check-input" type="checkbox" role="switch" id="boton_manual_{{d.nombre}}" onclick="setManual('{{d.nombre}}', this)" checked disabled>
               <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">Manual</label>
             {% else %}
-              <input class="form-check-input" type="checkbox" role="switch" id="boton_manual_{{d.nombre}}" onclick=setManual("{{d.nombre}}")>
+              <input class="form-check-input" type="checkbox" role="switch" id="boton_manual_{{d.nombre}}" onclick="setManual('{{d.nombre}}', this)">
               <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">Manual</label>
             {% endif %}
           </div>
           
           <div class="form-check form-switch">
             {% if d.consumo > 0 %}
-              <input class="form-check-input" type="checkbox" role="switch" id="boton_on_{{d.nombre}}" checked disabled>
+              <input class="form-check-input" type="checkbox" role="switch" id="boton_on_{{d.nombre}}" onclick="set_onOff('{{d.nombre}}', this)" checked disabled>
               <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">On</label>
             {% else %}
-            <input class="form-check-input" type="checkbox" role="switch" id="boton_on_{{d.nombre}}">
+            <input class="form-check-input" type="checkbox" role="switch" id="boton_on_{{d.nombre}}" onclick="set_onOff('{{d.nombre}}', this)">
             <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">On</label>
             {% endif %}
           </div>

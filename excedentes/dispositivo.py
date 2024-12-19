@@ -75,7 +75,8 @@ class dispositivo:
 	def setPower(self, valor):
 		with self.semaforoCom:	#Activo el semaforo para evitar concurrencias en el apagado
 			t=int(time.time())
-			if (self.horaEncendido+self.minTiempoSeguido <= t) or (self.emergencia) or self.powerAct < valor:  	# Acepta si: 	- ha pasado el tiempo minimo de encendido
+			self.logger.debug("%s setpower intenta %s"%(self.nombre, valor))
+			if (self.horaEncendido+self.minTiempoSeguido <= t) or (self.emergencia) or self.powerAct < valor or self.modoManual:  	# Acepta si: 	- ha pasado el tiempo minimo de encendido
 				#self.logger.info("Setpower de %s a %s" % (self.nombre, valor))
 				salida = self.ard.setPin(self.nombre, valor)																#				- Es una emergencia			
 				return(salida)																					#				- Es un aumento de potencia
@@ -139,6 +140,7 @@ class dispositivo:
 			#self.logger.info("Suscripcion a: Dispositivos/%s/status" % self.nombre)
 			client.subscribe("Dispositivos/%s/status" % self.nombre)
 			client.subscribe("Dispositivos/%s/online" % self.nombre)
+			client.subscribe("Dispositivos/%s/command" % self.nombre)
    
 	def setup(self):
 		self.ard.setup(self.tipo, self.nombre, self.pin, self.pinPower)
@@ -161,6 +163,6 @@ class dispositivo:
 		return(th)
 	
 	def publica_actividad(self, client):
-		mensaje = '{"tiempo_hoy":%f, "manual":%s}'%(self.get_tiempo_hoy(), 'true' if self.modoManual else 'false')
+		mensaje = '{"tiempo_hoy":%f, "manual":%s, "powerAct":%s}'%(self.get_tiempo_hoy(), 'true' if self.modoManual else 'false', self.powerAct)
 		topic='Dispositivos/'+self.nombre+'/activity'
 		client.publish(topic,mensaje)
