@@ -51,11 +51,13 @@ def on_message(mqtt_client, userdata, message):
             horas = int(th/-3600)
             secsRemaining = abs(th)%3600
             min = int(secsRemaining/60)
-            seg = secsRemaining%60
+            seg = int(secsRemaining%60)
+            settings.ESTADO['dispositivos'][nombre]['tiempoHoy'] = th
             settings.ESTADO['dispositivos'][nombre]['horas'] = horas
             settings.ESTADO['dispositivos'][nombre]['min'] = min
             settings.ESTADO['dispositivos'][nombre]['seg'] = seg
             settings.ESTADO['dispositivos'][nombre]['manual'] = data['manual']
+            settings.ESTADO['dispositivos'][nombre]['powerAct'] = data['powerAct']
     #print(settings.ESTADO)
 
 client = mqtt.Client()

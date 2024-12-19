@@ -3,6 +3,8 @@ from django.http import JsonResponse
 from django.core import serializers
 from excedentes.models import *
 from django.conf import settings
+from . import mqtt
+import time
 
 # Create your views here.
 def dash_board(request):
@@ -84,5 +86,25 @@ def get_data(request):
     else:
         return redirect('accounts/login/')
     
-def setManual(request, nombre):
-    get_data()
+def setManual(request, nombre_dispositivo, onOff):
+    if request.user.is_authenticated:
+        mensaje = '{"comando":"setManual", "dispositivo":"%s", "value":"%s"}' %(nombre_dispositivo, onOff)
+        topic='Dispositivos/%s/command'%nombre_dispositivo
+        mqtt.client.publish(topic,mensaje)
+        time.sleep(1)
+        #return JsonResponse(settings.ESTADO)
+        return JsonResponse(settings.ESTADO)
+    else:
+        return redirect('accounts/login/')
+    
+def set_onOff(request, nombre_dispositivo, onOff):
+    if request.user.is_authenticated:
+        mensaje = '{"comando":"set_onOff", "dispositivo":"%s", "value":"%s"}' %(nombre_dispositivo, onOff)
+        topic='Dispositivos/%s/command'%nombre_dispositivo
+        mqtt.client.publish(topic,mensaje)
+        time.sleep(1)
+        #return JsonResponse(settings.ESTADO)
+        return JsonResponse(settings.ESTADO)
+    else:
+        return redirect('accounts/login/')
+    

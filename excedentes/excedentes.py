@@ -59,7 +59,7 @@ class instalacion:
 				
                 #Preparo el MQTT
                 self.broker_address = conf['data']['broker_address']
-                self.mqtt_client = mqtt.Client("solar_MQTT")
+                self.mqtt_client = mqtt.Client()
                 self.mqtt_client.on_message = self.on_message 
                 self.mqtt_client.on_connect = self.on_connect
                 self.mqtt_client.on_disconnect = self.on_disconnect
@@ -260,13 +260,15 @@ class instalacion:
                 newPower = 255 if str(msg["output"]) == 'True' else 0
                 self.dispositivos[nombre].setStatus(newPower, msg["apower"])
 
-                if (msg["source"] != 'init' and msg["source"] != 'MQTT' and self.dispositivos[nombre].modoManual == False): 
+                if (msg["source"] == 'HTTP_in' and self.dispositivos[nombre].modoManual == False): 
                     self.dispositivos[nombre].logger.info("Puesto en modo manual");
                     self.dispositivos[nombre].modoManual=True
                     #self.dispositivos[nombre].publica_actividad(self.mqtt_client)
+                '''
                 if ((msg["source"] == 'init' or msg["source"] == 'MQTT') and self.dispositivos[nombre].modoManual == True): 
                     self.dispositivos[nombre].logger.info("Puesto en modo automatico");
                     self.dispositivos[nombre].modoManual=False
+                '''
                     #self.dispositivos[nombre].publica_actividad(self.mqtt_client)
                 #if self.lcd:
                 #    self.lcd.muestra_dispositivos(self.dispositivos.values())
@@ -279,6 +281,20 @@ class instalacion:
 
             if destino == "Arduinos":
                 pass
+
+        if canal == "command":
+            if destino == "Dispositivos":
+                msg=json.loads(decoded_message)
+                if msg['comando'] == 'setManual':
+                    self.dispositivos[msg['dispositivo']].modoManual = True if msg['value'] == 'true' else False
+                    self.dispositivos[msg['dispositivo']].publica_actividad(self.mqtt_client)
+                    self.logger.debug("%s modo manual a %s" %(msg['dispositivo'], self.dispositivos[msg['dispositivo']].modoManual))
+
+                if msg['comando'] == 'set_onOff':
+                    E = 255 if msg['value'] == 'true' else 0
+                    self.dispositivos[msg['dispositivo']].setPower(E)
+                    self.dispositivos[msg['dispositivo']].publica_actividad(self.mqtt_client)
+                    self.logger.debug("%s puesto manualmente a %s" %(msg['dispositivo'], E))
     
     def update(self):
         while not kill_threads:
@@ -340,6 +356,8 @@ class instalacion:
         #self.logger.debug("---")
         #i = 0
         for d in self.dispositivos.values():
+            if d.modoManual:
+                continue
             ''' 
 			Si hay varios dispositivos encendidos "cediendo" su consumo el disponible puede ser positivo cuando en realidad estoy consumiendo
 			Si el dispositivo esta apagado intentara "robar" a los de menos prioridad.
