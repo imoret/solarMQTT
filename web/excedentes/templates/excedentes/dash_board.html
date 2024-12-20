@@ -196,25 +196,24 @@
     {% endblock %}
   
     {% block content %}
-    <div id="instalacion_status" class="container cajita">
+
       <div class="row cajita" style="background-color: rgb(230, 139, 21)">
         <div id="chart_produccion_div" class="col align-self-end"></div>
         <div id="chart_excedente_div" class="col align-self-center"></div>
         <div id="chart_consumo_div" class="col align-self-end"></div>
       </div>
-    </div>
-    <div id="dispositivos" class="container  cajita">
+
       <div class="row cajita" style="background-color: aquamarine">
 
       {% for d in dispositivos %}
         <div class="col align-self-center cajita">
-          <div id="chart_{{d.nombre}}" class="col align-self-center"></div>
-          <div class="col align-self-center" id="tiempoHoy_{{d.nombre}}">
+          <div id="chart_{{d.nombre}}" class="align-self-center"></div>
+          <div class="align-self-center" id="tiempoHoy_{{d.nombre}}">
             {% if d.timepoHoy < 0 and d.horas != 0 %}
               -
             {% endif %}
             {{ d.horas }}:{{ d.min }}:{{ d.seg }}</div>
-          <div class="form-check form-switch">
+          <div class="form-check form-switch align-self-center">
             {% if d.manual %}
               <input class="form-check-input" type="checkbox" role="switch" id="boton_manual_{{d.nombre}}" onclick="setManual('{{d.nombre}}', this)" checked disabled>
               <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">Manual</label>
@@ -224,7 +223,7 @@
             {% endif %}
           </div>
           
-          <div class="form-check form-switch">
+          <div class="form-check form-switch align-self-center">
             {% if d.consumo > 0 %}
               <input class="form-check-input" type="checkbox" role="switch" id="boton_on_{{d.nombre}}" onclick="set_onOff('{{d.nombre}}', this)" checked disabled>
               <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">On</label>
@@ -236,9 +235,6 @@
         </div>
       {% endfor %}
 
-          </div>
-        </div>
-      </div>
     </div>
     <script>
      // MQTTconnect();

@@ -1,98 +1,121 @@
 {% extends 'excedentes/base.html' %}
 
 {% block content %}
-<div class="content container cajita">
-    <h1>Generar nuevo archivo de configuración <a href="{% url 'nuevo_archivo' %}"><button type="button">ACEPTAR</button></a></h1>
+<div class="row card cajita">
+    <div class="col-12 card-body">
+        <h5 class="card-tittle">Generar nuevo archivo de configuración </h5>
+        <a href="{% url 'nuevo_archivo' %}"><button type="button" class="btn btn-danger">ACEPTAR</button></a>
+    </div>
 </div>
-<div class="content container">
-    <div class="cajita">
-        <h2>INSTALACION</h2>
+
+<div class="row card cajita">
+    <div class=" col-12 card-body">
+        <h5 class="card-tittle">INSTALACION</h5>
         {% for instalacion in instalaciones %}
-            <div>
-                <h3>
-                    <p>Max red: {{ instalacion.maxred }}</p>
-                    <p>Local IP: {{ instalacion.localIP }}</p>
-                    <p>Broker address: {{ instlacion.broker_address }}</p>
-                    <p>Latitud: {{ instalacion.lat }}</p>
-                    <p>Longitud: {{ instalacion.lon }}</p>
-                    <p>LCD: {{ instalacion.lcd }}</p>
-                    <h1><a href="/admin/excedentes/instalaciones/{{instalacion.pk}}/change/"   target="_blank"><button type="button">EDITAR</button></a></h1>
-                </h3>
+            <div class="col card">
+                <div class="card-body">
+                    <p class="card-text">Max red: {{ instalacion.maxred }}</p>
+                    <p class="card-text">Local IP: {{ instalacion.localIP }}</p>
+                    <p class="card-text">Broker address: {{ instlacion.broker_address }}</p>
+                    <p class="card-text">Latitud: {{ instalacion.lat }}</p>
+                    <p class="card-text">Longitud: {{ instalacion.lon }}</p>
+                    <p class="card-text">LCD: {{ instalacion.lcd }}</p>
+                    <a href="/admin/excedentes/instalaciones/{{instalacion.pk}}/change/"   target="_blank"><button type="button" class="btn btn-primary">EDITAR</button></a></h1>
+                </div>
             </div>
         {% endfor %}
+        </div>
     </div>
+</div>
 
-    <div class="cajita">
-        <h2>INVERSORES</h2>
+<div class="row card cajita">
+    <div class="col-12 card-body">
+        <h5 class="card-tittle">INVERSORES</h5>
         {% for inversor in inversores %}
-            <div>
-                <h3>
-                    <p>Nombre: {{ inversor.nombre }}</p>
-                    <p>IP: {{ inversor.ip }}</p>
-                </h3>
-                <h1><a href="/admin/excedentes/inversores/{{inversor.pk}}/change/"   target="_blank"><button type="button">EDITAR</button></a></h1>
+            <div class="col card">
+                <div class="card-body"></div>
+                    <h4><p class="card-subtitle">Nombre: {{ inversor.nombre }}</p></h4>
+                    <p class="card-text">IP: {{ inversor.ip }}</p>
+                    <a href="/admin/excedentes/inversores/{{inversor.pk}}/change/"   target="_blank"><button type="button" class="btn btn-primary">EDITAR</button></a>
+                </div>
             </div>
         {% endfor %}
+        </div>
     </div>
+</div>
 
-    <div class="cajita">
-        <h2>ACTUADORES</h2>
+
+<div class="row card cajita">
+    <div class="col-12 card-body">
+        <h5 class="card-tittle">ACTUADORES</h5>
+        <div class="row">
         {% for actuador in actuadores %}
-            <div>
-                <h3>
-                    <p>{{ actuador.nombre }}</p>
-                    <p>Tipo: {{ actuador.tipo }}</p>
-                    <p>Puerto: {{ actuador.puerto }}</p>
-                </h3>
-                <h1><a href="/admin/excedentes/actuadores/{{actuador.pk}}/change/"   target="_blank"><button type="button">EDITAR</button></a></h1>
+            <div class="col card">
+                <div class="card-body">
+                    <h4><p class="card-subtitle">{{ actuador.nombre }}</p></h4>
+                    <p class="card-text">Tipo: {{ actuador.tipo }}</p>
+                    <p class="card-text">Puerto: {{ actuador.puerto }}</p>
+                    <a href="/admin/excedentes/actuadores/{{actuador.pk}}/change/"   target="_blank"><button type="button" class="btn btn-primary">EDITAR</button></a>
+                </div>
             </div>
         {% endfor %}
+        </div>
     </div>
+</div>
 
-    <div class="cajita">
-        <h2>DISPOSITIVOS</h2>
+
+ <div class="row card cajita">
+    <div class="col-12 card-body">
+        <h5 class="card-tittle">DISPOSITIVOS</h5>
+        <div class="row">
         {% for dispositivo in dispositivos %}
-            <div>
-                <h3>
-                    <p>{{ dispositivo.nombre }}</p>
-                    <p>Tipo: {{ dispositivo.tipo }}</p>
-                    <p>Power: {{ dispositivo.power }}</p>
-                    <p>Actuador: {{ dispositivo.adu }}</p>
-                    <p>Pin: {{ dispositivo.pin }}</p>
-                    <p>Pin lectura consumo: {{ dispositivo.pinPower }}</p>
-                    <p>Potencia minima: {{ dispositivo.minPower }}%</p>
-                    <p>Tiempo de reaccion: {{ dispositivo.tiempo_reaccion }}''</p>
-                    <p>Modos: 
-                        <ul><li>Lunes: {{ dispositivo.modoLunes }}</li>
-                            <li>Martes: {{ dispositivo.modoMartes }}</li>
-                            <li>Miercoles: {{ dispositivo.modoMiercoles }}</li>
-                            <li>Jueves: {{ dispositivo.modoJueves }}</li>
-                            <li>Viernes:  {{ dispositivo.modoViernes }}</li>
-                            <li>Sabado:  {{ dispositivo.modoSabado }}</li>
-                            <li>Domingo:  {{ dispositivo.modoDomingo }}</li>
+            <div class="col card">
+                <div class="card-body">
+                    <h4><p class="card-subtitle">{{ dispositivo.nombre }}</p></h4>
+                    <p class="card-text">Tipo: {{ dispositivo.tipo }}</p>
+                    <p class="card-text">Power: {{ dispositivo.power }}</p>
+                    <p class="card-text">Actuador: {{ dispositivo.adu }}</p>
+                    <p class="card-text">Pin: {{ dispositivo.pin }}</p>
+                    <p class="card-text">Pin lectura consumo: {{ dispositivo.pinPower }}</p>
+                    <p class="card-text">Potencia minima: {{ dispositivo.minPower }}%</p>
+                    <p class="card-text">Tiempo de reaccion: {{ dispositivo.tiempo_reaccion }}''</p>
+                    <p class="card-text">Modos: 
+                        <ul><li class="card-text">Lunes: {{ dispositivo.modoLunes }}</li>
+                            <li class="card-text">Martes: {{ dispositivo.modoMartes }}</li>
+                            <li class="card-text">Miercoles: {{ dispositivo.modoMiercoles }}</li>
+                            <li class="card-text">Jueves: {{ dispositivo.modoJueves }}</li>
+                            <li class="card-text">Viernes:  {{ dispositivo.modoViernes }}</li>
+                            <li class="card-text">Sabado:  {{ dispositivo.modoSabado }}</li>
+                            <li class="card-text">Domingo:  {{ dispositivo.modoDomingo }}</li>
                         </ul></p>
-                </h3>
-                <h1><a href="/admin/excedentes/dispositivos/{{dispositivo.pk}}/change/"   target="_blank"><button type="button">EDITAR</button></a></h1>
+                    <a href="/admin/excedentes/dispositivos/{{dispositivo.pk}}/change/"   target="_blank"><button type="button" class="btn btn-primary">EDITAR</button></a>
+                </div>
             </div>
         {% endfor %}
+        </div>
     </div>
+ </div>
 
-    <div class="cajita">
-        <h2>MODOS</h2>
+<div class="row card cajita">
+    <div class="col-12 card-body">
+        <h5 class="card-tittle">MODOS</h5>
+        <div class="row">
         {% for modo in modos %}
-            <div>
-                <h3>
-                    <p>{{ modo.nombre }}</p>
-                    <p>Horas encendido: {{ modo.timeOn }} </p>
-                    <p>Horas apagado: {{ modo.timeOff }}</p>
-                    <p>Consumir excedentes: {{ modo.consumirExcedente }}</p>
-                    <p>Horas de funcionamiento diario: {{ modo.tiempoAldia }}</p>
-                    <p>Maximo de horas diarias: {{ modo.tiempoMaximo }}</p>
-                    <p>Tiempo minimo seguido: {{ modo.tiempoSeguido }}</p>
-                    <p>Hora de corte: {{ modo.horaCorte }}</p>
-                </h3>
-                <h1><a href="/admin/excedentes/modos/{{modo.pk}}/change/"   target="_blank"><button type="button">EDITAR</button></a></h1>
+            <div class="col-3 card">
+                <div class="card-body">
+                    <h4><p class="card-subtitle">{{ modo.nombre }}</p></h4>
+                    <p class="card-text">Horas encendido: {{ modo.timeOn }} </p>
+                    <p class="card-text">Horas apagado: {{ modo.timeOff }}</p>
+                    <p class="card-text">Consumir excedentes: {{ modo.consumirExcedente }}</p>
+                    <p class="card-text">Horas de funcionamiento diario: {{ modo.tiempoAldia }}</p>
+                    <p class="card-text">Maximo de horas diarias: {{ modo.tiempoMaximo }}</p>
+                    <p class="card-text">Tiempo minimo seguido: {{ modo.tiempoSeguido }}</p>
+                    <p class="card-text">Hora de corte: {{ modo.horaCorte }}</p>
+                    <a href="/admin/excedentes/modos/{{modo.pk}}/change/"   target="_blank"><button type="button" class="btn btn-primary">EDITAR</button></a>
+                </div>
             </div>
         {% endfor %}
+        </div>
     </div>
+</div>
 {% endblock %}

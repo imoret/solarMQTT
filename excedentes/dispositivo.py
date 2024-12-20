@@ -75,7 +75,6 @@ class dispositivo:
 	def setPower(self, valor):
 		with self.semaforoCom:	#Activo el semaforo para evitar concurrencias en el apagado
 			t=int(time.time())
-			self.logger.debug("%s setpower intenta %s"%(self.nombre, valor))
 			if (self.horaEncendido+self.minTiempoSeguido <= t) or (self.emergencia) or self.powerAct < valor or self.modoManual:  	# Acepta si: 	- ha pasado el tiempo minimo de encendido
 				#self.logger.info("Setpower de %s a %s" % (self.nombre, valor))
 				salida = self.ard.setPin(self.nombre, valor)																#				- Es una emergencia			

@@ -26,29 +26,25 @@
 
     <link rel="stylesheet" href="{% static 'css/excedentes.css' %}" />
 
-    {% block head %}
-    {% endblock %}
+    {% block head %} {% endblock %}
   </head>
   <body>
-    <div class="page-header">
-      <h1><a href="/">Excedentes</a></h1>
+    <nav class="navbar navbar-expand-lg bg-light">
+      <a class="navbar-brand" href="/">Excedentes</a>
       {% if user.is_authenticated %}
-      <h3>
-        <ul>
-          <li><a href="/">Dashboard</a></li>
-          <li><a href="{% url 'config' %}">Config</a></li>
-          <li><a href="{% url 'logout' %}">Logout</a></li>
-        </ul>
-      </h3>
+     
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item"><a class="nav-link" href="/">Dashboard </a></li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'config' %}">Config </a></li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'logout' %}">Logout </a></li>
+      </ul>
+
       {% endif %}
-    </div>
+    </nav>
     <div class="content container">
-      <div class="row">
-        <div class="col-md-8">
-            {% block content %} 
-            {% endblock %}
-        </div>
-      </div>
+      {% block content %} {% endblock %}
     </div>
   </body>
 </html>
