@@ -51,8 +51,5 @@ web/solarMQTT/__pycache__/wsgi.cpython-310.pyc
 /web/excedentes/__pycache__
 /web/excedentes/__pycache__/mqtt.cpython-310.pyc
 /web/db.sqlite3
-/web/excedentes/migrations
 /web/excedentes/__pycache__/__init__.cpython-310.pyc
 /web/excedentes/migrations/__pycache__
-/web/excedentes/migrations/0008_alter_dispositivos_tiempo_reaccion.py
-/web/excedentes/migrations/0013_alter_modos_horacorte_alter_modos_timeoff_and_more.py
