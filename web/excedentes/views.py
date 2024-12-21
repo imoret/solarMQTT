@@ -17,10 +17,10 @@ def dash_board(request):
 def config(request):
     if request.user.is_authenticated:
         instalaciones = Instalaciones.objects.all()
-        inversores = Inversores.objects.all()
-        actuadores = Actuadores.objects.all()
-        dispositivos = Dispositivos.objects.all()
-        modos = Modos.objects.all()
+        inversores = Inversores.objects.order_by('nombre')
+        actuadores = Actuadores.objects.order_by('nombre')
+        dispositivos = Dispositivos.objects.order_by('nombre')
+        modos = Modos.objects.order_by('nombre')
         return render(request, 'excedentes/config.html', {'instalaciones':instalaciones, 'inversores':inversores, 'actuadores':actuadores, 'dispositivos':dispositivos, 'modos':modos})
     else:
         return redirect('accounts/login/')
@@ -33,7 +33,6 @@ def nuevo_archivo(request):
         a_MQTT = Actuadores.objects.filter(tipo=2)
         sh = Actuadores.objects.filter(tipo=3)
         dispositivos = Dispositivos.objects.all()
-        capacitativos = Dispositivos.objects.filter(tipo=2)
 
         conf = {}
         data = {'maxRed':instalaciones[0].maxred, 'localIP':instalaciones[0].localIP, "broker_address": instalaciones[0].broker_address, "lat" : instalaciones[0].lat, "lon" : instalaciones[0].lon, "lcd" : instalaciones[0].lcd}
@@ -58,9 +57,6 @@ def nuevo_archivo(request):
 
         for d in dispositivos:
             tipo = d.get_tipo()
-            print('##')
-            print(tipo)
-            print('##')
             modo_lunes = Modos.objects.filter(nombre=d.modoLunes)[0]
             modo_martes = Modos.objects.filter(nombre=d.modoMartes)[0]
             modo_miercoles = Modos.objects.filter(nombre=d.modoMiercoles)[0]
@@ -75,7 +71,6 @@ def nuevo_archivo(request):
         conf = {'data':data, 'inversores':inv, 'arduinos_serial':arduinos_serial, 'arduinos_MQTT':arduinos_MQTT,'shellys':shellys, 'dispositivos':disp}
         with open('../excedentes/excedentes.conf', 'w') as f:
             json.dump(conf, f, indent=4)
-        print(conf)
         return render(request, 'excedentes/dash_board.html', {'data':data})
     else:
         return redirect('accounts/login/')
@@ -107,4 +102,10 @@ def set_onOff(request, nombre_dispositivo, onOff):
         return JsonResponse(settings.ESTADO)
     else:
         return redirect('accounts/login/')
-    
+
+def instalacion(request):
+    if request.user.is_authenticated:
+        historicos = settings.ESTADO['historicos']
+        return render(request, 'excedentes/instalacion.html', {'historicos':historicos})
+    else:
+        return redirect('accounts/login/')

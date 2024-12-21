@@ -26,10 +26,6 @@
         }, 2000);
 
         function solicitaDatos(){
-          //conexion = new XMLHttpRequest();
-          //conexion.onreadystatechange = procesaDatos;
-          //conexion.open('GET', 'get_data', true);
-          //conexion.send();
           conecta('get_data');
         }
 
@@ -56,7 +52,7 @@
               }
             }
         }
-
+      
       function conecta(url){
         conexion = new XMLHttpRequest();
         conexion.onreadystatechange = procesaDatos;
@@ -201,6 +197,7 @@
         <div id="chart_produccion_div" class="col align-self-end"></div>
         <div id="chart_excedente_div" class="col align-self-center"></div>
         <div id="chart_consumo_div" class="col align-self-end"></div>
+        <div id="instalacion" class="col align-self-center"><a href="{% url 'instalacion' %}">instalacion</a></div>
       </div>
 
       <div class="row cajita" style="background-color: aquamarine">
@@ -212,7 +209,8 @@
             {% if d.timepoHoy < 0 and d.horas != 0 %}
               -
             {% endif %}
-            {{ d.horas }}:{{ d.min }}:{{ d.seg }}</div>
+            {{ d.horas }}:{{ d.min }}:{{ d.seg }}
+          </div>
           <div class="form-check form-switch align-self-center">
             {% if d.manual %}
               <input class="form-check-input" type="checkbox" role="switch" id="boton_manual_{{d.nombre}}" onclick="setManual('{{d.nombre}}', this)" checked disabled>

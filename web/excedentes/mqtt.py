@@ -9,6 +9,7 @@ def on_connect(mqtt_client, userdata, flags, rc):
     if rc == 0:
         print('MQTT Connected successfully')
         mqtt_client.subscribe('Instalacion/status')
+        mqtt_client.subscribe('Instalacion/historicos')
         time.sleep(15)
 
         dispositivos = Dispositivos.objects.all()
@@ -35,6 +36,8 @@ def on_message(mqtt_client, userdata, message):
         if canal == 'status':
             settings.ESTADO['instalacion']['produccion'] = data['produccion']
             settings.ESTADO['instalacion']['excedente'] = data['excedente']
+        if canal == 'historicos':
+            settings.ESTADO['historicos'] = data         
     elif destino == 'Shellys':
         nombre=message.topic.split('/')[1]
         canal=message.topic.split('/')[2]

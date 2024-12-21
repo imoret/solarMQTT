@@ -26,7 +26,10 @@ class instalacion:
         self.dispositivos = {}
         
         self.produccion = 0
-        self.excedente = 0 
+        self.excedente = 0
+
+        self.historico_excedente_produccion_5min = []
+        self.historico_excedente_produccion = []
         
 		#Creo el logger de la instalacion
         self.logger = logging.getLogger('instalacion')
@@ -37,80 +40,78 @@ class instalacion:
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         fhd.setFormatter(formatter)
         self.logger.addHandler(fhd)
-        
-        lock = FileLock("excedentes.conf.lock")
-        with lock:
-            with open('excedentes.conf') as fileConf:
-                conf = json.load(fileConf)
-                #self.nuevaConf = conf['nuevaConf']
-                self.maxRed = conf['data']['maxRed']
-                self.localIP = conf['data']['localIP']
 
-                #Creo la LCD
-                if conf['data']['lcd']:
-                    lat = conf['data']['lat']
-                    lon = conf['data']['lon']
-                    self.lcd = lcd(lat, lon)
-                    self.lcd_control = threading.Thread(target=self.thread_lcd)
-                    self.lcd_control.daemon = True
-                    self.lcd_control.start()
-                else:
-                    self.lcd = False
-				
-                #Preparo el MQTT
-                self.broker_address = conf['data']['broker_address']
-                self.mqtt_client = mqtt.Client()
-                self.mqtt_client.on_message = self.on_message 
-                self.mqtt_client.on_connect = self.on_connect
-                self.mqtt_client.on_disconnect = self.on_disconnect
-                self.mqtt_client.on_subscribe = self.on_subscribe
-                self.mqtt_client.on_unsubscribe = self.on_unsubscribe
-                self.logger.info("Inicio conexion al servidor MQTT")
-                self.mqtt_client.connect(self.broker_address)
-                
-                self.logger.info("Cargando inversores")
-                for i in conf['inversores']:				
-                    aux = fronius(i['nombre'],i['ip'])
-                    self.inversores[i['nombre']] = aux
-                    
-                self.logger.info("Cargando arduinos serial")
-                for a in conf['arduinos_serial']:
-                    aux=arduino_serial(a['nombre'],a['puerto'], self.broker_address, self.mqtt_client)
-                    self.arduinos[a['nombre']]=aux
-                    #self.arduinos[a['nombre']].subscribe()
+        with open('excedentes.conf') as fileConf:
+            conf = json.load(fileConf)
+            #self.nuevaConf = conf['nuevaConf']
+            self.maxRed = conf['data']['maxRed']
+            self.localIP = conf['data']['localIP']
 
-                self.logger.info("Cargando arduinos MQTT")   
-                for l in conf['arduinos_MQTT']:
-                    aux=arduino_MQTT(l['nombre'],self.broker_address, self.mqtt_client)
-                    self.arduinos[l['nombre']]=aux
-                    #self.arduinos[l['nombre']].subscribe()
-                    
-                self.logger.info("Cargando Shellys")
-                for s in conf['shellys']:
-                    aux=shelly(s['nombre'], self.broker_address, self.mqtt_client)
-                    self.arduinos[s['nombre']]=aux
-                    #self.arduinos[s['nombre']].subscribe()
+            #Creo la LCD
+            if conf['data']['lcd']:
+                lat = conf['data']['lat']
+                lon = conf['data']['lon']
+                self.lcd = lcd(lat, lon)
+                self.lcd_control = threading.Thread(target=self.thread_lcd)
+                self.lcd_control.daemon = True
+                self.lcd_control.start()
+            else:
+                self.lcd = False
+            
+            #Preparo el MQTT
+            self.broker_address = conf['data']['broker_address']
+            self.mqtt_client = mqtt.Client()
+            self.mqtt_client.on_message = self.on_message 
+            self.mqtt_client.on_connect = self.on_connect
+            self.mqtt_client.on_disconnect = self.on_disconnect
+            self.mqtt_client.on_subscribe = self.on_subscribe
+            self.mqtt_client.on_unsubscribe = self.on_unsubscribe
+            self.logger.info("Inicio conexion al servidor MQTT")
+            self.mqtt_client.connect(self.broker_address)
+            
+            self.logger.info("Cargando inversores")
+            for i in conf['inversores']:				
+                aux = fronius(i['nombre'],i['ip'])
+                self.inversores[i['nombre']] = aux
                 
-                self.logger.info("Cargando dispositivos")
-                for d in conf['dispositivos']:
-                    tipo = d['tipo']
-                    nombre = d['nombre']
-                    power = d['power']
-                    ardu = self.arduinos[d['ardu']]
-                    pin = d['pin']
-                    pinPower = d['pinPower']
-                    t_on = d["modos"][d['modoDia'][datetime.today().weekday()]]["timeOn"]
-                    t_off = d["modos"][d['modoDia'][datetime.today().weekday()]]["timeOff"]
-                    consumirE = d["modos"][d['modoDia'][datetime.today().weekday()]]["consumirExcedente"]
-                    tiempo_al_dia = d["modos"][d['modoDia'][datetime.today().weekday()]]["tiempoAldia"]
-                    tiempo_maximo = d["modos"][d['modoDia'][datetime.today().weekday()]]["tiempoMaximo"]
-                    tiempo_seguido = d["modos"][d['modoDia'][datetime.today().weekday()]]["tiempoSeguido"]
-                    hora_corte = d["modos"][d['modoDia'][datetime.today().weekday()]]["horaCorte"]
-                    minPower = d['minPower']
-                    tReact = d['tiempo_reaccion']
-                    aux = dispositivo(tipo, nombre, power, ardu, pin, pinPower, t_on, t_off, consumirE, tiempo_al_dia, tiempo_maximo, tiempo_seguido, hora_corte, minPower, tReact)
-                    self.dispositivos[d['nombre']] = aux
-                    self.dispositivos[d['nombre']].subscribe(self.mqtt_client)
+            self.logger.info("Cargando arduinos serial")
+            for a in conf['arduinos_serial']:
+                aux=arduino_serial(a['nombre'],a['puerto'], self.broker_address, self.mqtt_client)
+                self.arduinos[a['nombre']]=aux
+                #self.arduinos[a['nombre']].subscribe()
+
+            self.logger.info("Cargando arduinos MQTT")   
+            for l in conf['arduinos_MQTT']:
+                aux=arduino_MQTT(l['nombre'],self.broker_address, self.mqtt_client)
+                self.arduinos[l['nombre']]=aux
+                #self.arduinos[l['nombre']].subscribe()
+                
+            self.logger.info("Cargando Shellys")
+            for s in conf['shellys']:
+                aux=shelly(s['nombre'], self.broker_address, self.mqtt_client)
+                self.arduinos[s['nombre']]=aux
+                #self.arduinos[s['nombre']].subscribe()
+            
+            self.logger.info("Cargando dispositivos")
+            for d in conf['dispositivos']:
+                tipo = d['tipo']
+                nombre = d['nombre']
+                power = d['power']
+                ardu = self.arduinos[d['ardu']]
+                pin = d['pin']
+                pinPower = d['pinPower']
+                t_on = d["modos"][d['modoDia'][datetime.today().weekday()]]["timeOn"]
+                t_off = d["modos"][d['modoDia'][datetime.today().weekday()]]["timeOff"]
+                consumirE = d["modos"][d['modoDia'][datetime.today().weekday()]]["consumirExcedente"]
+                tiempo_al_dia = d["modos"][d['modoDia'][datetime.today().weekday()]]["tiempoAldia"]
+                tiempo_maximo = d["modos"][d['modoDia'][datetime.today().weekday()]]["tiempoMaximo"]
+                tiempo_seguido = d["modos"][d['modoDia'][datetime.today().weekday()]]["tiempoSeguido"]
+                hora_corte = d["modos"][d['modoDia'][datetime.today().weekday()]]["horaCorte"]
+                minPower = d['minPower']
+                tReact = d['tiempo_reaccion']
+                aux = dispositivo(tipo, nombre, power, ardu, pin, pinPower, t_on, t_off, consumirE, tiempo_al_dia, tiempo_maximo, tiempo_seguido, hora_corte, minPower, tReact)
+                self.dispositivos[d['nombre']] = aux
+                self.dispositivos[d['nombre']].subscribe(self.mqtt_client)
                     
                 
 
@@ -308,16 +309,32 @@ class instalacion:
             if self.lcd:   
                 self.lcd.muestraProduccion(trunc(p),trunc(e))
 
-            message = '{"produccion":%s, "excedente":%s, "consumo":%s}' %(p,e,p+e)
-            destino = 'SolarMQTT'
-            nombre = 'instalacion'
-            canal = 'status'
-                        
-            #self.mqtt_client.connect(self.broker_address)
+            self.historico_excedente_produccion_5min.append({
+                'fecha_hora': datetime.now().strftime('%Y-%m-%d-%H:%M:%S'),
+                'excedente': self.excedente,
+                'produccion': self.produccion
+            })
+            # Acumular las lecturas de historico_excedente_produccion_5min en historico_excedente_produccion
+            if len(self.historico_excedente_produccion_5min) >= 600:
+                total_excedente = sum(entry['excedente'] for entry in self.historico_excedente_produccion_5min) / 600
+                total_produccion = sum(entry['produccion'] for entry in self.historico_excedente_produccion) / 600
+                self.historico_excedente_produccion.append({
+                    'fecha_hora': datetime.now().strftime('%Y-%m-%d-%H:%M:%S'),
+                    'excedente': total_excedente,
+                    'produccion': total_produccion
+                })
+                self.historico_excedente_produccion_5min = []
+                topic='Instalacion/historicos'
+                mensaje = json.dumps(self.historico_excedente_produccion)
+                self.mqtt_client.publish(topic,mensaje)
+
+            # Eliminar datos más antiguos de 24 horas de historico_produccion y historico_excedente
+            now = datetime.now()
+            self.historico_excedente_produccion = [entry for entry in self.historico_excedente_produccion if (now - datetime.strptime(entry['fecha_hora'], '%Y-%m-%d-%H:%M:%S')).total_seconds() <= 86400]
+
             topic='Instalacion/status'
             mensaje = '{"produccion":%f, "excedente":%f}' %(p,e)
             self.mqtt_client.publish(topic,mensaje)
-            #self.mqtt_client.disconnect()
 
             time.sleep(0.5)
         
