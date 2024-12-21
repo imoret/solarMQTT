@@ -132,5 +132,11 @@ MQTT_KEEPALIVE = 60
 MQTT_USER = ''
 MQTT_PASSWORD = ''
 
-#Variables globales
-ESTADO = {"instalacion":{}, "dispositivos":{}}
+# Variables globales
+# This dictionary holds the state of the installation and devices.
+# It is intended to be used across the application to store and access the current state.
+ESTADO = {
+    "instalacion":{}, 
+    "dispositivos":{},
+    "historicos":{}
+}
