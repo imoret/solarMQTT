@@ -28,8 +28,8 @@ class instalacion:
         self.produccion = 0
         self.excedente = 0
 
-        self.historico_excedente_produccion_5min = []
-        self.historico_excedente_produccion = []
+        self.historico_5min = []
+        self.historico = []
         
 		#Creo el logger de la instalacion
         self.logger = logging.getLogger('instalacion')
@@ -301,39 +301,25 @@ class instalacion:
         while not kill_threads:
             e = 0
             p = 0
+            ac = 0
+            co = 0
             for i in self.inversores.values():
-                e += i.getExcedente()
-                p += i.getProduccion()
+                i.update()
+                datos = i.getDatos()
+                p += datos[0]
+                e += datos[1]
+                ac += datos[2]
+                co += datos[3]
             self.excedente = e
             self.produccion = p
+            self.autoconsumo = ac
+            self.consumo = co
             if self.lcd:   
-                self.lcd.muestraProduccion(trunc(p),trunc(e))
-
-            self.historico_excedente_produccion_5min.append({
-                'fecha_hora': datetime.now().strftime('%Y-%m-%d-%H:%M:%S'),
-                'excedente': self.excedente,
-                'produccion': self.produccion
-            })
-            # Acumular las lecturas de historico_excedente_produccion_5min en historico_excedente_produccion
-            if len(self.historico_excedente_produccion_5min) >= 600:
-                total_excedente = sum(entry['excedente'] for entry in self.historico_excedente_produccion_5min) / 600
-                total_produccion = sum(entry['produccion'] for entry in self.historico_excedente_produccion) / 600
-                self.historico_excedente_produccion.append({
-                    'fecha_hora': datetime.now().strftime('%Y-%m-%d-%H:%M:%S'),
-                    'excedente': total_excedente,
-                    'produccion': total_produccion
-                })
-                self.historico_excedente_produccion_5min = []
-                topic='Instalacion/historicos'
-                mensaje = json.dumps(self.historico_excedente_produccion)
-                self.mqtt_client.publish(topic,mensaje)
-
-            # Eliminar datos más antiguos de 24 horas de historico_produccion y historico_excedente
-            now = datetime.now()
-            self.historico_excedente_produccion = [entry for entry in self.historico_excedente_produccion if (now - datetime.strptime(entry['fecha_hora'], '%Y-%m-%d-%H:%M:%S')).total_seconds() <= 86400]
+                pass
+                #self.lcd.muestraProduccion(trunc(p),trunc(e))
 
             topic='Instalacion/status'
-            mensaje = '{"produccion":%f, "excedente":%f}' %(p,e)
+            mensaje = '{"produccion":%f, "excedente":%f, "autoconsumo" : %f, "consumo" : %f}' %(p, e, ac, co)
             self.mqtt_client.publish(topic,mensaje)
 
             time.sleep(0.5)

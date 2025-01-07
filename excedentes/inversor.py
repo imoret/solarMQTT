@@ -6,6 +6,8 @@ class fronius:
 	def __init__(self,nombre,_ip):
 		self.excedente=0
 		self.produccion=0
+		self.autoconsumo=0
+		self.consumo=0
 		self.nombre=nombre
 		self.ip = _ip
 		self.url = "http://"+self.ip+"/solar_api/v1/GetPowerFlowRealtimeData.fcgi"
@@ -42,6 +44,8 @@ class fronius:
 				else:
 					self.produccion=self.Json["Body"]["Data"]["Inverters"]["1"]["P"]
 					self.excedente=self.Json["Body"]["Data"]["Site"]["P_Grid"]
+					self.autoconsumo=self.produccion if self.excedente > 0 else self.produccion + self.excedente
+					self.consumo=self.produccion + self.excedente if self.excedente > 0 else self.produccion + self.excedente
 					#self.produccion = 2600
 					#self.excedente = 2591
 					#self.logger.info("Produccion: %s excedente: %s" %(self.produccion, self.excedente))
@@ -62,3 +66,11 @@ class fronius:
 	def getExcedente(self):
 		self.update()
 		return(self.excedente)
+	
+	def getStatus(self):
+		self.update()
+		return(self.online)
+	
+	def getDatos(self):
+		self.update()
+		return(self.produccion,self.excedente,self.autoconsumo,self.consumo)

@@ -138,5 +138,6 @@ MQTT_PASSWORD = ''
 ESTADO = {
     "instalacion":{}, 
     "dispositivos":{},
-    "historicos":{}
+    "historico_5min" : [],
+    "historico" : [],
 }

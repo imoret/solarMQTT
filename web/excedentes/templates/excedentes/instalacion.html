@@ -2,7 +2,7 @@
 
 {% block content %}
     <h1>Gráfico de Líneas de Datos Históricos</h1>
-    <div id="line_chart" style="width: 100%; height: 500px;"></div>
+    <div id="chart_div" style="width: 100%; height: 500px;"></div>
 
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script type="text/javascript">
@@ -11,19 +11,20 @@
 
         function drawChart() {
             var data = google.visualization.arrayToDataTable([
-                ['fecha_hora', 'produccion', 'excedente'],
-                {% for hp in historicos %}
-                    ['{{ hp.fecha_hora }}', {{ hp.produccion|floatformat:0 }}, {{ hp.excedente|floatformat:0 }}],
+                ['fecha_hora', 'Produccion', 'Autoconsumo', 'Consumo'],
+                {% for hp in historico %}
+                    ['{{ hp.fecha_hora }}', {{ hp.produccion|floatformat:0 }}, {{ hp.autoconsumo|floatformat:0 }}, {{ hp.consumo|floatformat:0 }}],
                 {% endfor %}
             ]);
 
             var options = {
                 title: 'Datos Históricos',
-                curveType: 'function',
+                seriesType: 'area',
+                series: { 2: { type: 'line', curveType: 'function' } },
                 legend: { position: 'bottom' }
             };
 
-            var chart = new google.visualization.LineChart(document.getElementById('line_chart'));
+            var chart = new google.visualization.ComboChart(document.getElementById('chart_div'));
 
             chart.draw(data, options);
         }
