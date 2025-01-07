@@ -2,6 +2,7 @@ import json
 import paho.mqtt.client as mqtt
 from django.conf import settings
 import time
+from datetime import datetime
 from excedentes.models import *
 from collections import defaultdict
 
@@ -36,8 +37,29 @@ def on_message(mqtt_client, userdata, message):
         if canal == 'status':
             settings.ESTADO['instalacion']['produccion'] = data['produccion']
             settings.ESTADO['instalacion']['excedente'] = data['excedente']
-        if canal == 'historicos':
-            settings.ESTADO['historicos'] = data         
+            settings.ESTADO['historico_5min'].append({
+                'fecha_hora': datetime.now().strftime('%Y-%m-%d-%H:%M:%S'),
+                'excedente': data['excedente'],
+                'produccion': data['produccion'],
+                'autoconsumo': data['autoconsumo'],
+                'consumo': data['consumo']
+            })
+            if len(settings.ESTADO['historico_5min']) >= 600:
+                total_excedente = sum(entry['excedente'] for entry in settings.ESTADO['historico_5min']) / 600
+                total_produccion = sum(entry['produccion'] for entry in settings.ESTADO['historico_5min']) / 600
+                total_autoconsumo = sum(entry['autoconsumo'] for entry in settings.ESTADO['historico_5min']) / 600
+                total_consumo = sum(entry['consumo'] for entry in settings.ESTADO['historico_5min']) / 600
+                settings.ESTADO['historico'].append({
+                    'fecha_hora': datetime.now().strftime('%Y-%m-%d-%H:%M:%S'),
+                    'excedente': total_excedente,
+                    'produccion': total_produccion,
+                    'autoconsumo': total_autoconsumo,
+                    'consumo': total_consumo
+                })
+                settings.ESTADO['historico_5min'] = []
+            now = datetime.now()
+            settings.ESTADO['historico'] = [entry for entry in settings.ESTADO['historico'] if (now - datetime.strptime(entry['fecha_hora'], '%Y-%m-%d-%H:%M:%S')).total_seconds() <= 86400]
+      
     elif destino == 'Shellys':
         nombre=message.topic.split('/')[1]
         canal=message.topic.split('/')[2]
