@@ -171,8 +171,8 @@ class instalacion:
                          #   self.logger.error(e)
 					#self.puerto.reset_input_buffer()
                 except Exception as e:
-                    pass
-                    #self.logger.error("En recibeComando: %s" % e)
+                    #pass
+                    self.logger.error("En recibeComando: %s" % e)
                     #self.arduinos[arduino].reset()
                     #exit()
                 #self.logger.debug("Desbloqueo el semaforo")
@@ -182,18 +182,26 @@ class instalacion:
 
     def thread_mqtt(self):
         while not kill_threads:
-            self.logger.info("Inicio el loop_forever MQTT")
-            self.mqtt_client.loop_forever()
-            self.logger.error("Cliente MQTT desconectado!!!")
-            time.sleep(4)
+            try:
+                self.logger.info("Inicio el loop_forever MQTT")
+                self.mqtt_client.loop_forever()
+                self.logger.error("Cliente MQTT desconectado!!!")
+                time.sleep(4)
+            except Exception as e:
+                self.logger.error("Error en el hilo MQTT: %s" % e)
+                time.sleep(5)
             
     def thread_lcd(self):
         while not kill_threads:
-            time.sleep(0.5)
-            self.lcd.muestraProduccion(trunc(self.produccion),trunc(self.excedente))
-            time.sleep(0.5)
-            self.lcd.muestraProduccion(trunc(self.produccion),trunc(self.excedente))
-            self.lcd.muestra_dispositivos(self.dispositivos.values())
+            try:
+                time.sleep(0.5)
+                self.lcd.muestraProduccion(trunc(self.produccion),trunc(self.excedente))
+                time.sleep(0.5)
+                self.lcd.muestraProduccion(trunc(self.produccion),trunc(self.excedente))
+                self.lcd.muestra_dispositivos(self.dispositivos.values())
+            except Exception as e:
+                self.logger.error("Error en el hilo LCD: %s" % e)
+                time.sleep(5)
   
     ################ Al conectar MQTT #################
     def on_connect(self, client, userdata, flags, rc):
@@ -225,104 +233,111 @@ class instalacion:
         #self.logger.info("On Message:%s"%decoded_message)
 
     def procesaComando(self, decoded_message, canal, destino, nombre):
-        #self.logger.debug("ProcesaComando canal:%s destino:%s nombre:%s" % (canal, destino, nombre))
-        #Si recibo un online
-        if canal == "online":
-            if (destino == "Shellys" or destino == "Arduinos"):
-                self.arduinos[nombre].online = True if decoded_message == 'true' else False
-                #self.logger.debug("%s online a %s" % (nombre, decoded_message))
-            if destino == "Dispositivos":
-                self.dispositivos[nombre].online = True if decoded_message == 'true' else False
-                #self.logger.debug("%s online a %s" % (nombre, decoded_message))
-                
-                
-        #Si recibo un evento
-        if canal == "event":
-            if destino == "Shellys":
-                pass
-            if destino == "Arduinos":
+        try:
+            #self.logger.debug("ProcesaComando canal:%s destino:%s nombre:%s" % (canal, destino, nombre))
+            #Si recibo un online
+            if canal == "online":
+                if (destino == "Shellys" or destino == "Arduinos"):
+                    self.arduinos[nombre].online = True if decoded_message == 'true' else False
+                    #self.logger.debug("%s online a %s" % (nombre, decoded_message))
+                if destino == "Dispositivos":
+                    self.dispositivos[nombre].online = True if decoded_message == 'true' else False
+                    #self.logger.debug("%s online a %s" % (nombre, decoded_message))
+                    
+                    
+            #Si recibo un evento
+            if canal == "event":
+                if destino == "Shellys":
+                    pass
+                if destino == "Arduinos":
+                    msg=json.loads(decoded_message)
+                    if msg['event'] == 'init':
+                        #self.logger.info("Mensaje recibido: %s" % decoded_message)
+                        a = self.arduinos[nombre]
+                        self.logger.info("Configuro dispositivos de %s" % nombre)
+                        for d in self.dispositivos.values():
+                            if a.nombre == d.ard.nombre:
+                                self.logger.info("Orden setup para %s" % d.nombre)
+                                d.setup()
+                if destino == "Dispositivos":
+                    pass
+            
+            #Si recibo un status    
+            if canal == "status":
                 msg=json.loads(decoded_message)
-                if msg['event'] == 'init':
-                    #self.logger.info("Mensaje recibido: %s" % decoded_message)
-                    a = self.arduinos[nombre]
-                    self.logger.info("Configuro dispositivos de %s" % nombre)
-                    for d in self.dispositivos.values():
-                        if a.nombre == d.ard.nombre:
-                            self.logger.info("Orden setup para %s" % d.nombre)
-                            d.setup()
-            if destino == "Dispositivos":
-                pass
-        
-        #Si recibo un status    
-        if canal == "status":
-            msg=json.loads(decoded_message)
-            self.dispositivos[nombre].publica_actividad(self.mqtt_client)
-            if destino == "Shellys":
-                newPower = 255 if str(msg["output"]) == 'True' else 0
-                self.dispositivos[nombre].setStatus(newPower, msg["apower"])
+                self.dispositivos[nombre].publica_actividad(self.mqtt_client)
+                if destino == "Shellys":
+                    newPower = 255 if str(msg["output"]) == 'True' else 0
+                    self.dispositivos[nombre].setStatus(newPower, msg["apower"])
 
-                if (msg["source"] == 'HTTP_in' and self.dispositivos[nombre].modoManual == False): 
-                    self.dispositivos[nombre].logger.info("Puesto en modo manual");
-                    self.dispositivos[nombre].modoManual=True
-                    #self.dispositivos[nombre].publica_actividad(self.mqtt_client)
-                '''
-                if ((msg["source"] == 'init' or msg["source"] == 'MQTT') and self.dispositivos[nombre].modoManual == True): 
-                    self.dispositivos[nombre].logger.info("Puesto en modo automatico");
-                    self.dispositivos[nombre].modoManual=False
-                '''
-                    #self.dispositivos[nombre].publica_actividad(self.mqtt_client)
-                #if self.lcd:
-                #    self.lcd.muestra_dispositivos(self.dispositivos.values())
+                    if (msg["source"] == 'HTTP_in' and self.dispositivos[nombre].modoManual == False): 
+                        self.dispositivos[nombre].logger.info("Puesto en modo manual");
+                        self.dispositivos[nombre].modoManual=True
+                        #self.dispositivos[nombre].publica_actividad(self.mqtt_client)
+                    '''
+                    if ((msg["source"] == 'init' or msg["source"] == 'MQTT') and self.dispositivos[nombre].modoManual == True): 
+                        self.dispositivos[nombre].logger.info("Puesto en modo automatico");
+                        self.dispositivos[nombre].modoManual=False
+                    '''
+                        #self.dispositivos[nombre].publica_actividad(self.mqtt_client)
+                    #if self.lcd:
+                    #    self.lcd.muestra_dispositivos(self.dispositivos.values())
 
-            if destino == "Dispositivos":
-                self.dispositivos[nombre].setStatus(msg['estado'], msg['consumo'])
-                #if self.lcd:
-                #    self.lcd.muestra_dispositivos(self.dispositivos.values())
-                #self.logger.debug("%s status:%s consumo:" %(nombre, str(self.dispositivos[nombre].powerAct), str(self.dispositivos[nombre].consumo)))
+                if destino == "Dispositivos":
+                    self.dispositivos[nombre].setStatus(msg['estado'], msg['consumo'])
+                    #if self.lcd:
+                    #    self.lcd.muestra_dispositivos(self.dispositivos.values())
+                    #self.logger.debug("%s status:%s consumo:" %(nombre, str(self.dispositivos[nombre].powerAct), str(self.dispositivos[nombre].consumo)))
 
-            if destino == "Arduinos":
-                pass
+                if destino == "Arduinos":
+                    pass
 
-        if canal == "command":
-            if destino == "Dispositivos":
-                msg=json.loads(decoded_message)
-                if msg['comando'] == 'setManual':
-                    self.dispositivos[msg['dispositivo']].modoManual = True if msg['value'] == 'true' else False
-                    self.dispositivos[msg['dispositivo']].publica_actividad(self.mqtt_client)
-                    self.logger.debug("%s modo manual a %s" %(msg['dispositivo'], self.dispositivos[msg['dispositivo']].modoManual))
+            if canal == "command":
+                if destino == "Dispositivos":
+                    msg=json.loads(decoded_message)
+                    if msg['comando'] == 'setManual':
+                        self.dispositivos[msg['dispositivo']].modoManual = True if msg['value'] == 'true' else False
+                        self.dispositivos[msg['dispositivo']].publica_actividad(self.mqtt_client)
+                        self.logger.debug("%s modo manual a %s" %(msg['dispositivo'], self.dispositivos[msg['dispositivo']].modoManual))
 
-                if msg['comando'] == 'set_onOff':
-                    E = 255 if msg['value'] == 'true' else 0
-                    self.dispositivos[msg['dispositivo']].setPower(E)
-                    self.dispositivos[msg['dispositivo']].publica_actividad(self.mqtt_client)
-                    self.logger.debug("%s puesto manualmente a %s" %(msg['dispositivo'], E))
+                    if msg['comando'] == 'set_onOff':
+                        E = 255 if msg['value'] == 'true' else 0
+                        self.dispositivos[msg['dispositivo']].setPower(E)
+                        self.dispositivos[msg['dispositivo']].publica_actividad(self.mqtt_client)
+                        self.logger.debug("%s puesto manualmente a %s" %(msg['dispositivo'], E))
+        except Exception as e:
+            self.logger.error("Error en procesaComando: %s" % e)
     
     def update(self):
         while not kill_threads:
-            e = 0
-            p = 0
-            ac = 0
-            co = 0
-            for i in self.inversores.values():
-                i.update()
-                datos = i.getDatos()
-                p += datos[0]
-                e += datos[1]
-                ac += datos[2]
-                co += datos[3]
-            self.excedente = e
-            self.produccion = p
-            self.autoconsumo = ac
-            self.consumo = co
-            if self.lcd:   
-                pass
-                #self.lcd.muestraProduccion(trunc(p),trunc(e))
+            try:
+                e = 0
+                p = 0
+                ac = 0
+                co = 0
+                for i in self.inversores.values():
+                    i.update()
+                    datos = i.getDatos()
+                    p += datos[0]
+                    e += datos[1]
+                    ac += datos[2]
+                    co += datos[3]
+                self.excedente = e
+                self.produccion = p
+                self.autoconsumo = ac
+                self.consumo = co
+                if self.lcd:   
+                    pass
+                    #self.lcd.muestraProduccion(trunc(p),trunc(e))
 
-            topic='Instalacion/status'
-            mensaje = '{"produccion":%f, "excedente":%f, "autoconsumo" : %f, "consumo" : %f}' %(p, e, ac, co)
-            self.mqtt_client.publish(topic,mensaje)
+                topic='Instalacion/status'
+                mensaje = '{"produccion":%f, "excedente":%f, "autoconsumo" : %f, "consumo" : %f}' %(p, e, ac, co)
+                self.mqtt_client.publish(topic,mensaje)
 
-            time.sleep(0.5)
+                time.sleep(0.5)
+            except Exception as e:
+                self.logger.error("Error en el hilo de actualizacion: %s" % e)
+                time.sleep(5)
         
     def disponible_dispositivos(self, nombre):
         '''
