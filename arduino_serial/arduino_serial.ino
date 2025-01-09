@@ -3,14 +3,16 @@
 #include "dispositivos.h"
 
 
-const String nombre = "ard1";
+const String nombre = "ard0";
 
 String inputString = "";
 bool stringComplete = false;
 
+bool inicio = false;
+
 // set interval for sending messages (milliseconds)
 const int interval = 8000;
-unsigned long previousMillis = 0;
+unsigned long previousMillis = 5000;
 
 dispositivo *dispositivos[10];
 
@@ -26,8 +28,12 @@ void setup()
     
     wdt_enable(WDTO_8S);
     Serial.begin(9600);
-    Serial.println("");
-    Serial.println("{\"canal\" : \"event\", \"destino\" : \"Arduinos\", \"nombre\":\"" + nombre + "\",\"mensaje\": {\"event\":\"init\"}}");
+    delay(500);
+    /*
+    Serial.println("{\"canal\" : \"event\", \"destino\" : \"Arduinos\", \"nombre\":\""+nombre+"\",\"mensaje\": {\"event\":\"init\"}}");
+    delay(500);
+    Serial.print("{\"canal\" : \"event\", \"destino\" : \"Arduinos\", \"nombre\":\""+nombre+"\",\"mensaje\": {\"event\":\"init\"}}");
+    */
     wdt_reset();
 }
 
@@ -42,6 +48,8 @@ void loop()
         previousMillis = currentMillis;
 
         // Envio un true a online
+        Serial.println("{\"canal\" : \"event\", \"destino\" : \"Arduinos\", \"nombre\":\""+nombre+"\",\"mensaje\": {\"event\":\"vacio\"}}");
+        delay(500);
         Serial.print("{\"canal\" : \"online\", \"destino\" : \"Arduinos\", \"nombre\":\"");
         Serial.print(nombre);
         Serial.println("\",\"mensaje\":\"true\"}");
@@ -52,6 +60,10 @@ void loop()
 
         // Envio un online de los dispositivos
         sendOnline();
+        
+        if (!inicio){
+          Serial.println("{\"canal\" : \"event\", \"destino\" : \"Arduinos\", \"nombre\":\""+nombre+"\",\"mensaje\": {\"event\":\"init\"}}");
+        }
     }
 
     if (stringComplete)
@@ -72,9 +84,8 @@ void loop()
 
             dispositivos[pin] = new dispositivo(pin, pinPower, nombre);
             dispositivos[pin]->setPin("LOW");
-
-            Serial.println("ok\n");
             sendStatus(pin);
+            inicio = true;
         }
 
         if (command == "setPin")
@@ -87,7 +98,6 @@ void loop()
                 {
                     String v = doc["valor"];
                     dispositivos[i]->setPin(v);
-                    Serial.println("ok\n");
                     sendStatus(i);
                     break;
                 }

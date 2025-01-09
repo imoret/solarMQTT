@@ -140,6 +140,14 @@ class instalacion:
 
     def recibeComando(self, puerto, semaforoCom, arduino):		
         global kill_threads
+        '''
+        canal = 'event'
+        destino = 'Arduinos'
+        nombre = arduino
+        topic=destino+'/'+nombre+'/'+canal
+        mensaje = '{"event":"init"}'
+        self.mqtt_client.publish(topic,mensaje)
+        '''
         while not kill_threads:
             with semaforoCom:
                 #self.logger.debug("Bloqueo el semaforo")
@@ -158,8 +166,10 @@ class instalacion:
                         #client = mqtt.Client("Solar")
                         #self.mqtt_client.connect(self.broker_address)
 
+                        
                         topic=destino+'/'+nombre+'/'+canal
                         self.mqtt_client.publish(topic,decoded_message)
+                        #self.logger.debug("Publicado: %s en %s" %(decoded_message, topic))
                         #self.mqtt_client.disconnect()
                             
                             #self.logger.debug("Proceso: %s %s %s msg %s" % (canal, destino, nombre, decoded_message))
@@ -172,7 +182,7 @@ class instalacion:
 					#self.puerto.reset_input_buffer()
                 except Exception as e:
                     #pass
-                    self.logger.error("En recibeComando: %s" % e)
+                    self.logger.error("En recibeComando: %s" % (e))
                     #self.arduinos[arduino].reset()
                     #exit()
                 #self.logger.debug("Desbloqueo el semaforo")
@@ -221,16 +231,22 @@ class instalacion:
    
     ############ MESSAGE MQTT ###################
     def on_message(self,client, userdata, message):
-        decoded_message=str(message.payload.decode("utf-8"))
-        destino = message.topic.split('/')[0]
-        nombre=message.topic.split('/')[1]
-        canal=message.topic.split('/')[2]
+        try:
+            decoded_message=str(message.payload.decode("utf-8"))
+            destino = message.topic.split('/')[0]
+            nombre=message.topic.split('/')[1]
+            canal=message.topic.split('/')[2]
 
-        #Creo un hilo que procesará el comando recibido
-        self.procesa = threading.Thread(target=self.procesaComando, args=(decoded_message, canal, destino, nombre))
-        self.procesa.daemon = True
-        self.procesa.start()
-        #self.logger.info("On Message:%s"%decoded_message)
+            #Creo un hilo que procesará el comando recibido
+            self.procesa = threading.Thread(target=self.procesaComando, args=(decoded_message, canal, destino, nombre))
+            self.procesa.daemon = True
+            self.procesa.start()
+            #self.logger.info("On Message:%s"%decoded_message)
+            #self.logger.info(destino)
+            #self.logger.info(nombre)
+            #self.logger.info(canal)
+        except Exception as e:
+            self.logger.error("Error en on_message: %s" % e)
 
     def procesaComando(self, decoded_message, canal, destino, nombre):
         try:
@@ -252,9 +268,9 @@ class instalacion:
                 if destino == "Arduinos":
                     msg=json.loads(decoded_message)
                     if msg['event'] == 'init':
-                        #self.logger.info("Mensaje recibido: %s" % decoded_message)
+                        #self.logger.info("Mensaje INIT recibido: %s" % decoded_message)
                         a = self.arduinos[nombre]
-                        self.logger.info("Configuro dispositivos de %s" % nombre)
+                        #self.logger.info("Configuro dispositivos de %s" % nombre)
                         for d in self.dispositivos.values():
                             if a.nombre == d.ard.nombre:
                                 self.logger.info("Orden setup para %s" % d.nombre)
