@@ -109,6 +109,11 @@ class arduino_serial(arduino):
 		return(salida)
 	
 	def reset(self):
+		'''
+		msg = '{"command":"reset"}'
+		self.logger.info("Hago reset:%s-" % msg)
+		self.enviaComando(msg)
+		'''
 		self.logger.error("MIERDA, EL ARDUINO SE HA COLGADO!!!!")
 		delattr(self,"puerto")
 		self.puerto = self.creaPuerto(self.pto)
@@ -119,13 +124,15 @@ class arduino_serial(arduino):
 		self.puerto.flushInput()							# Se borra cualquier data que haya quedado en el buffer
 		self.puerto.setDTR()								#Flanco de subida
 		time.sleep(0.3)
+		'''
 		with self.semaforoCom:
 			try:
 				respuesta = self.puerto.readline().decode("utf-8")	#Espero la respuesta de arduino
 			except Exception as e:
 				respuesta = "No hay respuesta, error %s" %e
 		self.logger.warning("Reseteo arduino, respuesta: -"+str(respuesta))
-		return(respuesta)
+		'''
+		return(True)
 			
 	def setPin(self,nombre,valor):
 		return(self.enviaComando('{"command":"setPin", "dispositivo":"'+nombre+'", "valor":"'+str(valor)+'"}'))
@@ -136,7 +143,9 @@ class arduino_serial(arduino):
 		self.enviaComando(msg)
 		
 	def subscribe(self):
+		#self.logger.info("Suscricion a Arduinos/%s/event" % self.nombre)
 		self.client.subscribe("Arduinos/%s/event" % self.nombre)
+		#self.logger.info("Suscricion a Arduinos/%s/online" % self.nombre)
 		self.client.subscribe("Arduinos/%s/online" % self.nombre)
 
 #arduino conectado por MQTT	
