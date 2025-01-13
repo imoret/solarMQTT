@@ -106,6 +106,8 @@ def set_onOff(request, nombre_dispositivo, onOff):
 def instalacion(request):
     if request.user.is_authenticated:
         historico = settings.ESTADO['historico']
+        if len(historico) == 0:
+            historico = settings.ESTADO['historico_5min']
         return render(request, 'excedentes/instalacion.html', {'historico':historico})
     else:
         return redirect('accounts/login/')
