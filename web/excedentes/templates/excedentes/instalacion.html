@@ -62,7 +62,7 @@
             ]);
 
             var options_historico = {
-                title: 'Datos Históricos',
+                title: 'Ultimas 24 horas',
                 seriesType: 'area',
                 colors:['gold', 'green', 'red'],
                 series: { 2: { type: 'line', curveType: 'function' } },
@@ -88,7 +88,6 @@
 {% endblock %}
 
 {% block content %}
-    <h1>Gráfico de Líneas de Datos Históricos</h1>
     <div id="chart_div" style="width: 100%; height: 500px;"></div>
 
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
