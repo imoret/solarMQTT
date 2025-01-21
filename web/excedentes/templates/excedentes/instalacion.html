@@ -48,6 +48,19 @@
                     historico.push([datos["historico_5min"][i].fecha_hora, datos["historico_5min"][i].produccion, datos["historico_5min"][i].autoconsumo, datos["historico_5min"][i].consumo]);
                 }
             }
+            let acumuladoProduccion = 0;
+            let acumuladoAutoconsumo = 0;
+            let acumuladoConsumo = 0;
+
+            for (let i = 1; i < historico.length; i++) {
+                acumuladoProduccion += historico[i][1];
+                acumuladoAutoconsumo += historico[i][2];
+                acumuladoConsumo += historico[i][3];
+            }
+
+            document.getElementById("acumulado-produccion").textContent = acumuladoProduccion.toFixed(1);
+            document.getElementById("acumulado-autoconsumo").textContent = acumuladoAutoconsumo.toFixed(1);
+            document.getElementById("acumulado-consumo").textContent = acumuladoConsumo.toFixed(1);
         }
 
         google.charts.load('current', {'packages':['corechart']});
@@ -89,7 +102,12 @@
 
 {% block content %}
     <div id="chart_div" style="width: 100%; height: 500px;"></div>
-
+    <div id="acumulado" style="margin-top: 20px;">
+        <h3>Acumulado</h3>
+        <p>Producción: <span id="acumulado-produccion">0.0</span> kWh</p>
+        <p>Autoconsumo: <span id="acumulado-autoconsumo">0.0</span> kWh</p>
+        <p>Consumo: <span id="acumulado-consumo">0.0</span> kWh</p>
+    </div>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script type="text/javascript">
         
