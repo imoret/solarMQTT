@@ -38,8 +38,8 @@ def on_message(mqtt_client, userdata, message):
             settings.ESTADO['instalacion']['produccion'] = data['produccion']
             settings.ESTADO['instalacion']['excedente'] = data['excedente']
             settings.ESTADO['historico_5min'].append({
-                #'fecha_hora': datetime.now().strftime('%Y-%m-%d-%H:%M:%S'),
-                'fecha_hora': datetime.now().strftime('%H:%M:%S'),
+                'fecha_hora': datetime.now().strftime('%Y-%m-%d-%H:%M:%S'),
+                #'fecha_hora': datetime.now().strftime('%H:%M:%S'),
                 'excedente': data['excedente'],
                 'produccion': data['produccion'],
                 'autoconsumo': data['autoconsumo'],
