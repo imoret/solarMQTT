@@ -128,7 +128,6 @@ class dispositivo:
 							self.setTiempoHoy(self.tiempoDiario)
 							self.horaCorte = d["modos"][d['modoDia'][dia]]['horaCorte'] * 3600
 							self.modoManual = False
-							self.minPower = d['minPower']
 							self.logger.info("Cargada configuracion para el "+dias_semana[dia]+": "+str(d['modoDia'][dia]))
 		except Exception as e:
 			self.logger.error("No es posible cargar la nueva configuracion")
