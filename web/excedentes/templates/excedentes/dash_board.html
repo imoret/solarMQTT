@@ -189,20 +189,20 @@
     {% endblock %}
   
     {% block content %}
-    <div class="container">
+    <div class="container-md">
       <div class="row cajita" style="background-color: rgb(230, 139, 21)">
-        <div id="chart_produccion_div" class="col-3"></div>
-        <div id="chart_excedente_div" class="col-4"></div>
-        <div id="chart_consumo_div" class="col-3"></div>
-        <div id="instalacion" class="col-2 align-self-center"><a href="{% url 'instalacion' %}">instalacion</a></div>
+        <div id="chart_produccion_div" class="col-md-3"></div>
+        <div id="chart_excedente_div" class="col-md-4"></div>
+        <div id="chart_consumo_div" class="col-md-3"></div>
+        <div id="instalacion" class="col-md-2 align-self-center"><a href="{% url 'instalacion' %}">instalacion</a></div>
       </div>
     </div>
 
 
-    <div class="container" >
+    <div class="container-md" >
       <div class="row cajita" style="background-color: aquamarine">
         {% for d in dispositivos %}
-          <div class="col-3 align-self-center cajita">
+          <div class="col-md-3 align-self-center cajita">
             <div id="chart_{{d.nombre}}" class="align-self-center"></div>
             <div class="align-self-center" id="tiempoHoy_{{d.nombre}}">
               {% if d.timepoHoy < 0 and d.horas != 0 %}
