@@ -2,11 +2,6 @@
 
 {% block head %}
     <script
-      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-      crossorigin="anonymous">
-    </script>
-    <script
       type="text/javascript"
       src="https://www.gstatic.com/charts/loader.js"
     ></script>
@@ -194,47 +189,49 @@
     {% endblock %}
   
     {% block content %}
-
+    <div class="container">
       <div class="row cajita" style="background-color: rgb(230, 139, 21)">
-        <div id="chart_produccion_div" class="col align-self-end"></div>
-        <div id="chart_excedente_div" class="col align-self-center"></div>
-        <div id="chart_consumo_div" class="col align-self-end"></div>
-        <div id="instalacion" class="col align-self-center"><a href="{% url 'instalacion' %}">instalacion</a></div>
+        <div id="chart_produccion_div" class="col-3"></div>
+        <div id="chart_excedente_div" class="col-4"></div>
+        <div id="chart_consumo_div" class="col-3"></div>
+        <div id="instalacion" class="col-2 align-self-center"><a href="{% url 'instalacion' %}">instalacion</a></div>
       </div>
+    </div>
 
+
+    <div class="container" >
       <div class="row cajita" style="background-color: aquamarine">
-
-      {% for d in dispositivos %}
-        <div class="col align-self-center cajita">
-          <div id="chart_{{d.nombre}}" class="align-self-center"></div>
-          <div class="align-self-center" id="tiempoHoy_{{d.nombre}}">
-            {% if d.timepoHoy < 0 and d.horas != 0 %}
-              -
-            {% endif %}
-            {{ d.horas }}:{{ d.min }}:{{ d.seg }}
+        {% for d in dispositivos %}
+          <div class="col-3 align-self-center cajita">
+            <div id="chart_{{d.nombre}}" class="align-self-center"></div>
+            <div class="align-self-center" id="tiempoHoy_{{d.nombre}}">
+              {% if d.timepoHoy < 0 and d.horas != 0 %}
+                -
+              {% endif %}
+              {{ d.horas }}:{{ d.min }}:{{ d.seg }}
+            </div>
+              <div class="form-check form-switch align-self-center">
+                {% if d.manual %}
+                  <input class="form-check-input" type="checkbox" role="switch" id="boton_manual_{{d.nombre}}" onclick="setManual('{{d.nombre}}', this)" checked disabled>
+                  <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">Manual</label>
+                {% else %}
+                  <input class="form-check-input" type="checkbox" role="switch" id="boton_manual_{{d.nombre}}" onclick="setManual('{{d.nombre}}', this)">
+                  <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">Manual</label>
+                {% endif %}
+              </div>
+              
+              <div class="form-check form-switch align-self-center">
+                {% if d.consumo > 0 %}
+                  <input class="form-check-input" type="checkbox" role="switch" id="boton_on_{{d.nombre}}" onclick="set_onOff('{{d.nombre}}', this)" checked disabled>
+                  <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">On</label>
+                {% else %}
+                <input class="form-check-input" type="checkbox" role="switch" id="boton_on_{{d.nombre}}" onclick="set_onOff('{{d.nombre}}', this)">
+                <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">On</label>
+                {% endif %}
+              </div>
           </div>
-          <div class="form-check form-switch align-self-center">
-            {% if d.manual %}
-              <input class="form-check-input" type="checkbox" role="switch" id="boton_manual_{{d.nombre}}" onclick="setManual('{{d.nombre}}', this)" checked disabled>
-              <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">Manual</label>
-            {% else %}
-              <input class="form-check-input" type="checkbox" role="switch" id="boton_manual_{{d.nombre}}" onclick="setManual('{{d.nombre}}', this)">
-              <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">Manual</label>
-            {% endif %}
-          </div>
-          
-          <div class="form-check form-switch align-self-center">
-            {% if d.consumo > 0 %}
-              <input class="form-check-input" type="checkbox" role="switch" id="boton_on_{{d.nombre}}" onclick="set_onOff('{{d.nombre}}', this)" checked disabled>
-              <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">On</label>
-            {% else %}
-            <input class="form-check-input" type="checkbox" role="switch" id="boton_on_{{d.nombre}}" onclick="set_onOff('{{d.nombre}}', this)">
-            <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">On</label>
-            {% endif %}
-          </div>
-        </div>
-      {% endfor %}
-
+        {% endfor %}
+      </div>
     </div>
     <script>
      // MQTTconnect();

@@ -59,6 +59,7 @@ def on_message(mqtt_client, userdata, message):
                 })
                 settings.ESTADO['historico_5min'] = []
             now = datetime.now()
+            # Remove entries older than 24 hours (86400 seconds) from the historical data
             settings.ESTADO['historico'] = [entry for entry in settings.ESTADO['historico'] if (now - datetime.strptime(entry['fecha_hora'], '%Y-%m-%d-%H:%M:%S')).total_seconds() <= 86400]
       
     elif destino == 'Shellys':
