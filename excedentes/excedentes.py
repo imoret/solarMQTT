@@ -467,9 +467,12 @@ class instalacion:
             
     def paradaEmergencia(self, logText = "PARADA DE EMERGENCIA Superado maximo KWs permitidos ", espera=60):
         self.logger.warning(str(logText)+" "+str(int(self.excedente))+" de "+str(int(self.maxRed)))
-        while True:	#do while bucle
+        while True:	#do while bucl+
+            estadoAnterior = {}
             for d in self.dispositivos.values():
                 d.emergencia = True
+                if d.modoManual:
+                    estadoAnterior[d.nombre] = d.powerAct
                 d.setPower(0)
             if self.lcd:
                 self.lcd.parada_emergencia()               
@@ -484,6 +487,8 @@ class instalacion:
             time.sleep(1)
         for d in self.dispositivos.values():
             d.emergencia = False
+            if d.modoManual:
+                d.setPower(estadoAnterior[d.nombre])
         self.logger.warning("PARADA DE EMERGENCIA TERMINADA: "+str(int(self.excedente))+" de "+str(int(self.maxRed)))      
         
 ########### ctrl+c cierra el programa ############	
