@@ -1,129 +1,147 @@
-{% extends 'excedentes/base.html' %}
+{% extends 'excedentes/base.html' %} {% block head %}
+<script
+  src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+  integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+  crossorigin="anonymous"
+></script>
+<script
+  type="text/javascript"
+  src="https://www.gstatic.com/charts/loader.js"
+></script>
+<script
+  src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"
+  type="text/javascript"
+></script>
+<script type="text/javascript">
+  datos = {"instalacion": {"produccion": 0.0, "excedente": 0.0}, "dispositivos": {"termo": {"consumo": 0.0, "tiempo_hoy": 0, "manual": false}, "pozo": {"consumo": 0.0, "tiempo_hoy": 0, "manual": false}, "H1": {"consumo": 0.0, "tiempo_hoy": 0, "manual": false}, "H2": {"consumo": 0, "tiempo_hoy": 0, "manual": true}, "H3": {"consumo": 0.0, "tiempo_hoy": 0, "manual": false}, "H4": {"consumo": 0, "tiempo_hoy": 0, "manual": false}}}
+  historico = [['fecha_hora', 'Produccion', 'Autoconsumo', 'Consumo']];
 
-{% block head %}
-    <script
-        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-        crossorigin="anonymous">
-    </script>
-    <script
-    type="text/javascript"
-    src="https://www.gstatic.com/charts/loader.js"
-    ></script>
-    <script
-    src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"
-    type="text/javascript"
-    ></script>
-    <script type="text/javascript">
-        datos = {"instalacion": {"produccion": 0.0, "excedente": 0.0}, "dispositivos": {"termo": {"consumo": 0.0, "tiempo_hoy": 0, "manual": false}, "pozo": {"consumo": 0.0, "tiempo_hoy": 0, "manual": false}, "H1": {"consumo": 0.0, "tiempo_hoy": 0, "manual": false}, "H2": {"consumo": 0, "tiempo_hoy": 0, "manual": true}, "H3": {"consumo": 0.0, "tiempo_hoy": 0, "manual": false}, "H4": {"consumo": 0, "tiempo_hoy": 0, "manual": false}}}
-        historico = [['fecha_hora', 'Produccion', 'Autoconsumo', 'Consumo']];
-        solicitaDatos();
+  setInterval(function () {
+      solicitaDatos();
+  }, 60000);
 
-        setInterval(function () {
-            solicitaDatos();
-        }, 60000);
+  function solicitaDatos(){
+      conecta('get_data');
+  }
 
-        function solicitaDatos(){
-            conecta('get_data');
-        }
+  function conecta(url){
+      conexion = new XMLHttpRequest();
+      conexion.onreadystatechange = procesaDatos;
+      conexion.open('GET', url, true);
+      conexion.send();
+  }
 
-        function conecta(url){
-            conexion = new XMLHttpRequest();
-            conexion.onreadystatechange = procesaDatos;
-            conexion.open('GET', url, true);
-            conexion.send();
-        }
+  function procesaDatos(){
+      if (conexion.readyState == 4){
+        datos = JSON.parse(conexion.responseText);
+      }
+      historico = [['fecha_hora', 'Produccion', 'Autoconsumo', 'Consumo']];
 
-        function procesaDatos(){
-            if (conexion.readyState == 4){
-              datos = JSON.parse(conexion.responseText);
+      if (datos["historico"].length > 0){
+          historial = datos["historico"];
+      }else{
+          historial = datos["historico_5min"];
+      }
+
+      for (let i=0; i< historial.length; i++){
+          let fecha = new Date(historial[i].fecha_hora.replace(/-/g, '/'));
+          let hora = fecha.getHours();
+          let min = fecha.getMinutes();
+          let h = ("0"+hora).slice(-2);
+          h = h+":"+("0"+min).slice(-2);
+          historico.push([h, historial[i].produccion, historial[i].autoconsumo, historial[i].consumo]);
+      }
+      let acumuladoProduccion = 0;
+      let acumuladoAutoconsumo = 0;
+      let acumuladoConsumo = 0;
+
+      for (let i = 1; i < historial.length; i++) {
+          let fecha1 = new Date(historial[i].fecha_hora.replace(/-/g, '/'));
+          let fecha2 = new Date(historial[i - 1].fecha_hora.replace(/-/g, '/'));
+          let tiempoTranscurrido = (fecha1 - fecha2) / 1000; // Convert to seconds
+          if (tiempoTranscurrido === 0) {
+              tiempoTranscurrido = 1;
+          }
+          console.log(fecha1, fecha2, tiempoTranscurrido);
+
+          acumuladoProduccion += (historico[i][1] * tiempoTranscurrido / 3600) / 1000;
+          acumuladoAutoconsumo += (historico[i][2] * tiempoTranscurrido / 3600) / 1000;
+          acumuladoConsumo += (historico[i][3] * tiempoTranscurrido / 3600) / 1000;
+          console.log(historico[i][3]);
+          console.log(acumuladoConsumo);
+      }
+
+      document.getElementById("acumulado-produccion").textContent = acumuladoProduccion.toFixed(1);
+      document.getElementById("acumulado-autoconsumo").textContent = acumuladoAutoconsumo.toFixed(1);
+      document.getElementById("acumulado-consumo").textContent = acumuladoConsumo.toFixed(1);
+  }
+
+  google.charts.load('current', {'packages':['corechart']});
+  google.charts.setOnLoadCallback(drawChart);
+
+  function drawChart() {
+      solicitaDatos();
+
+      var data_historico = google.visualization.arrayToDataTable([
+          ['fecha_hora', 'Produccion', 'Autoconsumo', 'Consumo'],
+          {% for hp in historico %}
+              ['{{ hp.fecha_hora }}', {{ hp.produccion|floatformat:0 }}, {{ hp.autoconsumo|floatformat:0 }}, {{ hp.consumo|floatformat:0 }}],
+          {% endfor %}
+      ]);
+
+      var options_historico = {
+          title: 'Ultimas 24 horas',
+          seriesType: 'area',
+          colors:['gold', 'green', 'red'],
+          series: { 2: { type: 'line', curveType: 'function' } },
+          legend: { position: 'bottom' }
+      };
+
+      var chart_historico = new google.visualization.ComboChart(document.getElementById('chart_div'));
+      
+      setTimeout(function(){
+        for (let i = 0; i < historico.length; i++){
+            data_historico =  google.visualization.arrayToDataTable(historico);
             }
-            historico = [['fecha_hora', 'Produccion', 'Autoconsumo', 'Consumo']];
-            if (datos["historico"].length > 0){
-                for (let i=0; i< datos["historico"].length; i++){
-                    historico.push([datos["historico"][i].fecha_hora, datos["historico"][i].produccion, datos["historico"][i].autoconsumo, datos["historico"][i].consumo]);
-                }
-            }else{
-                for (let i=0; i< datos["historico_5min"].length; i++){
-                    historico.push([datos["historico_5min"][i].fecha_hora, datos["historico_5min"][i].produccion, datos["historico_5min"][i].autoconsumo, datos["historico_5min"][i].consumo]);
-                }
-            }
-            let acumuladoProduccion = 0;
-            let acumuladoAutoconsumo = 0;
-            let acumuladoConsumo = 0;
+        chart_historico.draw(data_historico, options_historico);
+      }, 250);
 
-            for (let i = 2; i < historico.length; i++) {
-                let fecha1 = new Date(historico[i][0].replace(/-/g, '/'));
-                let fecha2 = new Date(historico[i - 1][0].replace(/-/g, '/'));
-                let tiempoTranscurrido = (fecha1 - fecha2) / 1000; // Convert to seconds
-                if (tiempoTranscurrido === 0) {
-                    tiempoTranscurrido = 1;
-                }
-                console.log(fecha1, fecha2, tiempoTranscurrido);
-/*
-                let fecha1 = datetime.datetime.strptime(historico[i][0], "%Y-%m-%d %H:%M:%S");
-                let fecha2 = datetime.datetime.strptime(historico[i - 1][0], "%Y-%m-%d %H:%M:%S");
-                let tiempoTranscurrido = (fecha2-fecha1)/timedelta(seconds=1);
- */               
-                acumuladoProduccion += (historico[i][1] * 3600 / tiempoTranscurrido) / 1000;
-                acumuladoAutoconsumo += (historico[i][2] * 3600 / tiempoTranscurrido) / 1000;
-                acumuladoConsumo += ((historico[i][3] / tiempoTranscurrido)/3600) / 1000;
-                console.log(historico[i][3]);
-                console.log(acumuladoConsumo);
-            }
+      //chart_historico.draw(data_historico, options_historico);
 
-            document.getElementById("acumulado-produccion").textContent = acumuladoProduccion.toFixed(1);
-            document.getElementById("acumulado-autoconsumo").textContent = acumuladoAutoconsumo.toFixed(1);
-            document.getElementById("acumulado-consumo").textContent = acumuladoConsumo.toFixed(1);
-        }
+      setInterval(function () {
+          for (let i = 0; i < historico.length; i++){
+              data_historico =  google.visualization.arrayToDataTable(historico);
+          }
+          chart_historico.draw(data_historico, options_historico);
+      }, 60000);
+  }
+</script>
+{% endblock %} {% block content %}
+<div class="container">
+  <div class="row cajita">
+    <div class="col-12" id="chart_div" style="width: 100%; height: 500px"></div>
 
-        google.charts.load('current', {'packages':['corechart']});
-        google.charts.setOnLoadCallback(drawChart);
-
-        function drawChart() {
-            var data_historico = google.visualization.arrayToDataTable([
-                ['fecha_hora', 'Produccion', 'Autoconsumo', 'Consumo'],
-                {% for hp in historico %}
-                    ['{{ hp.fecha_hora }}', {{ hp.produccion|floatformat:0 }}, {{ hp.autoconsumo|floatformat:0 }}, {{ hp.consumo|floatformat:0 }}],
-                {% endfor %}
-            ]);
-
-            var options_historico = {
-                title: 'Ultimas 24 horas',
-                seriesType: 'area',
-                colors:['gold', 'green', 'red'],
-                series: { 2: { type: 'line', curveType: 'function' } },
-                legend: { position: 'bottom' }
-            };
-
-            var chart_historico = new google.visualization.ComboChart(document.getElementById('chart_div'));
-
-            chart_historico.draw(data_historico, options_historico);
-
-            setInterval(function () {
-                for (let i = 0; i < historico.length; i++){
-                    data_historico =  google.visualization.arrayToDataTable(historico);
-                }
-                chart_historico.draw(data_historico, options_historico);
-            }, 60000);
-        }
-
-        
-
-        
-    </script>
-{% endblock %}
-
-{% block content %}
-    <div id="chart_div" style="width: 100%; height: 500px;"></div>
-    <div id="acumulado" style="margin-top: 20px;">
-        <h3>Acumulado</h3>
-        <p>Producción: <span id="acumulado-produccion">0.0</span> kWh</p>
-        <p>Autoconsumo: <span id="acumulado-autoconsumo">0.0</span> kWh</p>
-        <p>Consumo: <span id="acumulado-consumo">0.0</span> kWh</p>
+    <div class="col-12">TOTAL</div>
+    <div class="col" style="d-inline; color: yellow;">
+      <p>
+        Producción:
+        <span id="acumulado-produccion" style="color: darkgoldenrod">0.0</span>
+        kWh
+      </p>
     </div>
-    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-    <script type="text/javascript">
-        
-    </script>
+    <div class="col" style="d-inline; color: green;">
+      <p>
+        Autoconsumo:
+        <span id="acumulado-autoconsumo" style="color: darkgreen">0.0</span> kWh
+      </p>
+    </div>
+    <div class="col" style="d-inline; color: red">
+      <p>
+        Consumo:
+        <span id="acumulado-consumo" style="color: darkred">0.0</span> kWh
+      </p>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
