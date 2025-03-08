@@ -74,8 +74,8 @@ def on_message(mqtt_client, userdata, message):
             settings.ESTADO['dispositivos'][nombre]['consumo'] = data['consumo']
         
         if canal == 'activity':
-            th = -data['tiempo_hoy']
-            horas = int(th/-3600)
+            th = data['tiempo_hoy']
+            horas = int(th/3600)
             secsRemaining = abs(th)%3600
             min = int(secsRemaining/60)
             seg = int(secsRemaining%60)

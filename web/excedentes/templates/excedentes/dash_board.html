@@ -31,10 +31,15 @@
               datos = JSON.parse(conexion.responseText);
             }
             for (let d in datos["dispositivos"]){
+              let tiempo_hoy = datos["dispositivos"][d]["tiempoHoy"]
               let horas = datos["dispositivos"][d]["horas"]
               let min = datos["dispositivos"][d]["min"]
               let seg = datos["dispositivos"][d]["seg"]
-              document.getElementById("tiempoHoy_"+d).textContent=horas+":"+min+":"+seg+" hoy";
+              if (tiempo_hoy < 0 && horas == 0){
+                document.getElementById("tiempoHoy_"+d).textContent="-"+horas+":"+min+":"+seg+" hoy";
+              }else{
+                document.getElementById("tiempoHoy_"+d).textContent=horas+":"+min+":"+seg+" hoy";
+              }
               if (datos["dispositivos"][d]["powerAct"] > 0){
                 document.getElementById("boton_on_"+d).checked = true;
               }else{
@@ -205,7 +210,7 @@
           <div class="col-md-3 align-self-center cajita">
             <div id="chart_{{d.nombre}}" class="align-self-center"></div>
             <div class="align-self-center" id="tiempoHoy_{{d.nombre}}">
-              {% if d.timepoHoy < 0 and d.horas != 0 %}
+              {% if d.timepoHoy < 0 and d.horas == 0 %}
                 -
               {% endif %}
               {{ d.horas }}:{{ d.min }}:{{ d.seg }}
