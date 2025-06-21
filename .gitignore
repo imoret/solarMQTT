@@ -1,6 +1,7 @@
 
 /.vscode
 /excedentes_old
+excedentes/excedentes.conf
 /excedentes/excedentes.conf.lock
 /excedentes/excedentes.log
 /excedentes/H2.conf.lock
@@ -53,3 +54,4 @@ web/solarMQTT/__pycache__/wsgi.cpython-310.pyc
 /web/db.sqlite3
 /web/excedentes/__pycache__/__init__.cpython-310.pyc
 /web/excedentes/migrations/__pycache__
+/web/variables.env
