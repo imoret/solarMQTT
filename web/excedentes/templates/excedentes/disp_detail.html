@@ -1,0 +1,140 @@
+{% extends 'excedentes/base.html' %}
+
+{% block head %}
+<script
+      type="text/javascript"
+      src="https://www.gstatic.com/charts/loader.js"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"
+      type="text/javascript"
+    ></script>
+
+    <script type="text/javascript">
+        datos = {"instalacion": {"produccion": 0.0, "excedente": 0.0}, "dispositivos": {"termo": {"consumo": 0.0, "tiempo_hoy": 0, "manual": false}, "pozo": {"consumo": 0.0, "tiempo_hoy": 0, "manual": false}, "H1": {"consumo": 0.0, "tiempo_hoy": 0, "manual": false}, "H2": {"consumo": 0, "tiempo_hoy": 0, "manual": true}, "H3": {"consumo": 0.0, "tiempo_hoy": 0, "manual": false}, "H4": {"consumo": 0, "tiempo_hoy": 0, "manual": false}}}
+  
+        
+        google.charts.load("current", { packages: ["gauge"] });
+        google.charts.setOnLoadCallback(drawChart);
+  
+        solicitaDatos();
+  
+        setInterval(function () {
+            solicitaDatos();
+          }, 2000);
+  
+          function solicitaDatos(){
+            conecta('get_data');
+          }
+
+          function procesaDatos(){
+            if (conexion.readyState == 4){
+              datos = JSON.parse(conexion.responseText);
+            }
+            let tiempo_hoy = datos["tiempoHoy"]
+            let horas = datos["horas"]
+            let min = datos["min"]
+            let seg = datos["seg"]
+            if (tiempo_hoy < 0 && horas == 0){
+                document.getElementById("tiempoHoy_{{d.nombre}}").textContent="-"+horas+":"+min+":"+seg+" hoy";
+            }else{
+                document.getElementById("tiempoHoy_{{d.nombre}}").textContent=horas+":"+min+":"+seg+" hoy";
+            }
+          }
+    
+        function conecta(url){
+            conexion = new XMLHttpRequest();
+            conexion.onreadystatechange = procesaDatos;
+            url = '/'+url+'/{{d.nombre}}/';
+            conexion.open('GET', url, true);
+            conexion.send();
+        }
+
+        function setManual(nm, cb){
+            url='/setManual/'+nm+'/'+cb.checked+'/'
+            conecta(url);
+        }
+
+        function set_onOff(nm, cb){
+            url='/set_onOff/'+nm+'/'+cb.checked+'/'
+            conecta(url);
+        }
+
+        function drawChart() {
+            var data_{{d.nombre}} = google.visualization.arrayToDataTable([
+            ["Label", "Value"],
+            ["{{d.nombre}}", 0],
+          ]);
+
+          var options_{{d.nombre}} = {
+            width: 300 ,
+            height: 90,
+            redFrom: {{ d.power_medio_alto }},
+            redTo: {{ d.power_max }},
+            yellowFrom: {{ d.power_medio }},
+            yellowTo: {{ d.power_medio_alto }},
+            greenFrom: {{ 0 }},
+            greenTo: {{ d.power_min }},
+            minorTicks: 5,
+            min: {{ 0 }},
+            max: {{ d.power_max }},
+          };
+
+          var chart_{{d.nombre}} = new google.visualization.Gauge(
+            document.getElementById("chart_{{d.nombre}}")
+          );
+
+          chart_{{ d.nombre }}.draw(data_{{d.nombre}}, options_{{d.nombre}});
+
+          setInterval(function() {
+            data_{{d.nombre}}.setValue(0, 1, datos['consumo']);
+            chart_{{d.nombre}}.draw(data_{{d.nombre}}, options_{{d.nombre}});
+          }, 2000);
+        }
+    </script>
+
+{% endblock %}
+
+{% block content %}
+<div class="container-md" >
+    <div class="row cajita" style="background-color: aquamarine">
+        <div class="col-md-12 align-self-center text-center">
+            <h1>{{ d.nombre }}</h1>
+        </div>
+        <div class="col-md-12">
+            <div class="col-md-3 align-self-center cajita">
+                <div id="chart_{{d.nombre}}" class="align-self-center">Consumo inst</div>
+                <div class="align-self-center" id="tiempoHoy_{{d.nombre}}">
+                  {% if d.timepoHoy < 0 and d.horas == 0 %}
+                    -
+                  {% endif %}
+                  {{ d.horas }}:{{ d.min }}:{{ d.seg }}
+                </div>
+                <div class="form-check form-switch align-self-center">
+                    {% if d.manual %}
+                      <input class="form-check-input" type="checkbox" role="switch" id="boton_manual_{{d.nombre}}" onclick="setManual('{{d.nombre}}', this)" checked disabled>
+                      <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">Manual</label>
+                    {% else %}
+                      <input class="form-check-input" type="checkbox" role="switch" id="boton_manual_{{d.nombre}}" onclick="setManual('{{d.nombre}}', this)">
+                      <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">Manual</label>
+                    {% endif %}
+                </div>
+                  
+                <div class="form-check form-switch align-self-center">
+                    {% if d.consumo > 0 %}
+                      <input class="form-check-input" type="checkbox" role="switch" id="boton_on_{{d.nombre}}" onclick="set_onOff('{{d.nombre}}', this)" checked disabled>
+                      <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">On</label>
+                    {% else %}
+                    <input class="form-check-input" type="checkbox" role="switch" id="boton_on_{{d.nombre}}" onclick="set_onOff('{{d.nombre}}', this)">
+                    <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">On</label>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-12 align-self-center cajita">
+            <div id="chart_{{d.nombre}}_consumo" class="align-self-center">consumo temp</div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
