@@ -8,5 +8,7 @@ urlpatterns = [
     path('get_data', views.get_data, name='get_data'),
     path('setManual/<str:nombre_dispositivo>/<str:onOff>/', views.setManual, name='setManual'),
     path('set_onOff/<str:nombre_dispositivo>/<str:onOff>/', views.set_onOff, name='set_onOff'),
-    path('instalacion', views.instalacion, name='instalacion')
+    path('instalacion', views.instalacion, name='instalacion'),
+    path('disp_detail/<str:disp>/', views.disp_detail, name='disp_detail'),
+    path('get_data/<str:disp>/',views.get_data_disp, name='get_data_disp'),
 ]

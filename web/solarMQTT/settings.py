@@ -140,4 +140,6 @@ ESTADO = {
     "dispositivos":{},
     "historico_5min" : [],
     "historico" : [],
+    "historico_disp_5min" : {},
+    "historico_disp" : {},
 }
