@@ -1,0 +1,21 @@
+import multiprocessing
+
+bind = "0.0.0.0:8001"           # Escucha en todas las interfaces, puerto 8000 (puedes cambiarlo)
+workers = multiprocessing.cpu_count() * 2 + 1  # Calculado según núcleos disponibles en la Raspberry
+threads = 2                     # Cantidad de threads por worker
+timeout = 120                   # Tiempo máximo de espera por petición (segundos)
+
+# Rutas de logs (ajusta según necesidad)
+accesslog = "/home/pi/app/logs/gunicorn_access.log"
+errorlog = "/home/pi/app/logs/gunicorn_error.log"
+loglevel = "info"
+
+# Nombre del proceso (opcional)
+proc_name = "excedentes_MQTT_app"
+
+# Directorio base del proyecto (opcional pero recomendado si lanzas desde otro lugar)
+chdir = "/home/pi/Desktop/solarMQTT/web"
+
+# Usuario/grupo con el que se ejecutará (opcional)
+# user = "pi"
+# group = "pi"
