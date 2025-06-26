@@ -81,15 +81,6 @@ def get_data(request):
     else:
         return redirect('accounts/login/')
     
-def get_data_disp(request, disp):
-    if request.user.is_authenticated:
-        dispositivo = Dispositivos.objects.filter(nombre=disp)[0]
-        datos['instantaneos'] = settings.ESTADO['dispositivos'][dispositivo.nombre]
-        datos['historicos'] = settings.ESTADO['historico_disp'][dispositivo.nombre]
-        return JsonResponse(datos)
-    else:
-        return redirect('accounts/login/')
-    
 def setManual(request, nombre_dispositivo, onOff):
     if request.user.is_authenticated:
         mensaje = '{"comando":"setManual", "dispositivo":"%s", "value":"%s"}' %(nombre_dispositivo, onOff)
@@ -118,12 +109,5 @@ def instalacion(request):
         if len(historico) == 0:
             historico = settings.ESTADO['historico_5min']
         return render(request, 'excedentes/instalacion.html', {'historico':historico})
-    else:
-        return redirect('accounts/login/')
-    
-def disp_detail(request, disp):
-    if request.user.is_authenticated:
-        dispositivo = Dispositivos.objects.filter(nombre=disp)[0]
-        return render(request, 'excedentes/disp_detail.html', {'d':dispositivo})
     else:
         return redirect('accounts/login/')
