@@ -33,8 +33,8 @@ class dispositivo:
 		self.emergencia = False
 		self.modoManual = False
 
-		#Creo el logger del dispositivo
-		self.logger = logging.getLogger(self.nombre)
+		#Creo el logger del dispositivo con un nombre único
+		self.logger = logging.getLogger('dispositivo_' + self.nombre)
 		self.logger.setLevel(logging.DEBUG)
 		fhd = logging.FileHandler('excedentes.log')
 		fhd.setLevel(logging.DEBUG)
@@ -128,7 +128,8 @@ class dispositivo:
 							self.setTiempoHoy(self.tiempoDiario)
 							self.horaCorte = d["modos"][d['modoDia'][dia]]['horaCorte'] * 3600
 							self.modoManual = False
-							self.logger.info("Cargada configuracion para el "+dias_semana[dia]+": "+str(d['modoDia'][dia]))
+							name = threading.get_ident()
+							self.logger.info("%s cargada configuracion para el %s: %s",name,dias_semana[dia],d['modoDia'][dia])
 		except Exception as e:
 			self.logger.error("No es posible cargar la nueva configuracion")
 			self.logger.error(e)
