@@ -71,7 +71,8 @@ def nuevo_archivo(request):
         conf = {'data':data, 'inversores':inv, 'arduinos_serial':arduinos_serial, 'arduinos_MQTT':arduinos_MQTT,'shellys':shellys, 'dispositivos':disp}
         with open('../excedentes/excedentes.conf', 'w') as f:
             json.dump(conf, f, indent=4)
-        return render(request, 'excedentes/dash_board.html', {'data':data})
+        dispositivos = Dispositivos.objects.all()
+        return render(request, 'excedentes/dash_board.html', {'dispositivos':dispositivos})
     else:
         return redirect('accounts/login/')
     
