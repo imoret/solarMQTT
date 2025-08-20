@@ -207,8 +207,10 @@
     <div class="container-md" >
       <div class="row cajita" style="background-color: aquamarine">
         {% for d in dispositivos %}
+         
           <div class="col-md-3 align-self-center cajita">
             <div id="chart_{{d.nombre}}" class="align-self-center"></div>
+            <a href="{% url 'dispositivo' nombre_dispositivo=d.nombre %}">{{ d.nombre }}</a>
             <div class="align-self-center" id="tiempoHoy_{{d.nombre}}">
               {% if d.timepoHoy < 0 and d.horas == 0 %}
                 -
