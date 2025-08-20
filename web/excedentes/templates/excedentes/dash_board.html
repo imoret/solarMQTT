@@ -207,34 +207,36 @@
     <div class="container-md" >
       <div class="row cajita" style="background-color: aquamarine">
         {% for d in dispositivos %}
-          <div class="col-md-3 align-self-center cajita">
-            <div id="chart_{{d.nombre}}" class="align-self-center"></div>
-            <div class="align-self-center" id="tiempoHoy_{{d.nombre}}">
-              {% if d.timepoHoy < 0 and d.horas == 0 %}
-                -
-              {% endif %}
-              {{ d.horas }}:{{ d.min }}:{{ d.seg }}
-            </div>
-              <div class="form-check form-switch align-self-center">
-                {% if d.manual %}
-                  <input class="form-check-input" type="checkbox" role="switch" id="boton_manual_{{d.nombre}}" onclick="setManual('{{d.nombre}}', this)" checked disabled>
-                  <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">Manual</label>
-                {% else %}
-                  <input class="form-check-input" type="checkbox" role="switch" id="boton_manual_{{d.nombre}}" onclick="setManual('{{d.nombre}}', this)">
-                  <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">Manual</label>
+          <a href="{% url 'dispositivo' d.pk %}">
+            <div class="col-md-3 align-self-center cajita">
+              <div id="chart_{{d.nombre}}" class="align-self-center"></div>
+              <div class="align-self-center" id="tiempoHoy_{{d.nombre}}">
+                {% if d.timepoHoy < 0 and d.horas == 0 %}
+                  -
                 {% endif %}
+                {{ d.horas }}:{{ d.min }}:{{ d.seg }}
               </div>
-              
-              <div class="form-check form-switch align-self-center">
-                {% if d.consumo > 0 %}
-                  <input class="form-check-input" type="checkbox" role="switch" id="boton_on_{{d.nombre}}" onclick="set_onOff('{{d.nombre}}', this)" checked disabled>
+                <div class="form-check form-switch align-self-center">
+                  {% if d.manual %}
+                    <input class="form-check-input" type="checkbox" role="switch" id="boton_manual_{{d.nombre}}" onclick="setManual('{{d.nombre}}', this)" checked disabled>
+                    <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">Manual</label>
+                  {% else %}
+                    <input class="form-check-input" type="checkbox" role="switch" id="boton_manual_{{d.nombre}}" onclick="setManual('{{d.nombre}}', this)">
+                    <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">Manual</label>
+                  {% endif %}
+                </div>
+                
+                <div class="form-check form-switch align-self-center">
+                  {% if d.consumo > 0 %}
+                    <input class="form-check-input" type="checkbox" role="switch" id="boton_on_{{d.nombre}}" onclick="set_onOff('{{d.nombre}}', this)" checked disabled>
+                    <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">On</label>
+                  {% else %}
+                  <input class="form-check-input" type="checkbox" role="switch" id="boton_on_{{d.nombre}}" onclick="set_onOff('{{d.nombre}}', this)">
                   <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">On</label>
-                {% else %}
-                <input class="form-check-input" type="checkbox" role="switch" id="boton_on_{{d.nombre}}" onclick="set_onOff('{{d.nombre}}', this)">
-                <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">On</label>
-                {% endif %}
-              </div>
-          </div>
+                  {% endif %}
+                </div>
+            </div>
+          </a>
         {% endfor %}
       </div>
     </div>
