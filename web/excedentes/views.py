@@ -1,3 +1,4 @@
+from email import message
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.core import serializers
@@ -110,5 +111,26 @@ def instalacion(request):
         if len(historico) == 0:
             historico = settings.ESTADO['historico_5min']
         return render(request, 'excedentes/instalacion.html', {'historico':historico})
+    else:
+        return redirect('accounts/login/')
+
+def reset_dispositivo(request, dispositivo_id):
+    if request.user.is_authenticated:
+        try:
+            dispositivo = Dispositivos.objects.get(id=dispositivo_id)
+            message = '{"comando":"resetDispositivo", "dispositivo":"%s"}' %dispositivo.nombre
+            topic='Dispositivos/%s/command'%dispositivo.nombre
+            mqtt.client.publish(topic,message)
+            time.sleep(1)
+            return redirect('dispositivo', nombre_dispositivo=dispositivo.nombre)
+        except Dispositivos.DoesNotExist:
+            return redirect('dash_board')
+    else:
+        return redirect('login')
+
+def dispositivo(request, nombre_dispositivo):
+    if request.user.is_authenticated:
+        dispositivo = Dispositivos.objects.get(nombre=nombre_dispositivo)
+        return render(request, 'excedentes/dispositivo.html', {'dispositivo': dispositivo})
     else:
         return redirect('accounts/login/')
