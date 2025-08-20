@@ -67,39 +67,11 @@ def on_message(mqtt_client, userdata, message):
         canal=message.topic.split('/')[2]
         if canal == 'status':
             settings.ESTADO['dispositivos'][nombre]['consumo'] = data['apower']
-            settings.ESTADO['historico_disp_5min'][nombre].append({
-                'fecha_hora': datetime.now().strftime('%Y-%m-%d-%H:%M:%S'),
-                'consumo': data['apower']
-            })
-            if len(settings.ESTADO['historico_disp_5min'][nombre]) >= 600:
-                total_consumo = sum(entry['consumo'] for entry in settings.ESTADO['historico_disp_5min'][nombre]) / 600
-                settings.ESTADO['historico_disp'][nombre].append({
-                    'fecha_hora': datetime.now().strftime('%Y-%m-%d-%H:%M:%S'),
-                    'consumo': total_consumo
-                })
-                settings.ESTADO['historico_disp_5min'][nombre] = []
-            now = datetime.now()
-            # Remove entries older than 24 hours (86400 seconds) from the historical data
-            settings.ESTADO['historico_disp'][nombre] = [entry for entry in settings.ESTADO['historico_disp'][nombre] if (now - datetime.strptime(entry['fecha_hora'], '%Y-%m-%d-%H:%M:%S')).total_seconds() <= 86400]
     elif destino == 'Dispositivos':
         nombre=message.topic.split('/')[1]
         canal=message.topic.split('/')[2]
         if canal == 'status':
             settings.ESTADO['dispositivos'][nombre]['consumo'] = data['consumo']
-            settings.ESTADO['historico_disp_5min'][nombre].append({
-                'fecha_hora': datetime.now().strftime('%Y-%m-%d-%H:%M:%S'),
-                'consumo': data['consumo']
-            })
-            if len(settings.ESTADO['historico_disp_5min'][nombre]) >= 600:
-                total_consumo = sum(entry['consumo'] for entry in settings.ESTADO['historico_disp_5min'][nombre]) / 600
-                settings.ESTADO['historico_disp'][nombre].append({
-                    'fecha_hora': datetime.now().strftime('%Y-%m-%d-%H:%M:%S'),
-                    'consumo': total_consumo
-                })
-                settings.ESTADO['historico_disp_5min'][nombre] = []
-            now = datetime.now()
-            # Remove entries older than 24 hours (86400 seconds) from the historical data
-            settings.ESTADO['historico_disp'][nombre] = [entry for entry in settings.ESTADO['historico_disp'][nombre] if (now - datetime.strptime(entry['fecha_hora'], '%Y-%m-%d-%H:%M:%S')).total_seconds() <= 86400]
         
         if canal == 'activity':
             th = data['tiempo_hoy']

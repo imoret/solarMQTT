@@ -28,13 +28,17 @@
         margin-left: 0;
     }
 
+<<<<<<< HEAD
     [dir="rtl"] .inline-group ul.tools a.add,
+=======
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     [dir="rtl"] .inline-group div.add-row a,
     [dir="rtl"] .inline-group .tabular tr.add-row td a {
         padding: 8px 26px 8px 10px;
         background-position: calc(100% - 8px) 9px;
     }
 
+<<<<<<< HEAD
     [dir="rtl"] .related-widget-wrapper-link + .selector {
         margin-right: 0;
         margin-left: 15px;
@@ -45,6 +49,8 @@
         margin-left: 8px;
     }
 
+=======
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     [dir="rtl"] .object-tools li {
         float: right;
     }
@@ -69,7 +75,12 @@
         margin-right: 15px;
     }
 
+<<<<<<< HEAD
     [dir="rtl"] .aligned ul {
+=======
+    [dir="rtl"] .aligned ul,
+    [dir="rtl"] form .aligned ul.errorlist {
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
         margin-right: 0;
     }
 
@@ -77,4 +88,26 @@
         margin-left: 0;
         margin-right: 0;
     }
+<<<<<<< HEAD
+=======
+    [dir="rtl"] .aligned .vCheckboxLabel {
+        padding: 1px 5px 0 0;
+    }
+
+    [dir="rtl"] .selector-remove {
+        background-position: 0 0;
+    }
+
+    [dir="rtl"] :enabled.selector-remove:focus, :enabled.selector-remove:hover {
+        background-position: 0 -24px;
+    }
+
+    [dir="rtl"] .selector-add  {
+        background-position: 0 -48px;
+    }
+
+    [dir="rtl"] :enabled.selector-add:focus, :enabled.selector-add:hover {
+        background-position: 0 -72px;
+    }
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
 }
