@@ -84,18 +84,30 @@
 
 #toolbar form input {
     border-radius: 4px;
+<<<<<<< HEAD
     font-size: 14px;
+=======
+    font-size: 0.875rem;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     padding: 5px;
     color: var(--body-fg);
 }
 
 #toolbar #searchbar {
+<<<<<<< HEAD
     height: 19px;
+=======
+    height: 1.1875rem;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     border: 1px solid var(--border-color);
     padding: 2px 5px;
     margin: 0;
     vertical-align: top;
+<<<<<<< HEAD
     font-size: 13px;
+=======
+    font-size: 0.8125rem;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     max-width: 100%;
 }
 
@@ -105,7 +117,11 @@
 
 #toolbar form input[type="submit"] {
     border: 1px solid var(--border-color);
+<<<<<<< HEAD
     font-size: 13px;
+=======
+    font-size: 0.8125rem;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     padding: 4px 8px;
     margin: 0;
     vertical-align: middle;
@@ -125,6 +141,13 @@
     margin-right: 4px;
 }
 
+<<<<<<< HEAD
+=======
+#changelist-search .help {
+    word-break: break-word;
+}
+
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
 /* FILTER COLUMN */
 
 #changelist-filter {
@@ -135,8 +158,19 @@
     margin: 0 0 0 30px;
 }
 
+<<<<<<< HEAD
 #changelist-filter h2 {
     font-size: 14px;
+=======
+@media (forced-colors: active) {
+  #changelist-filter {
+      border: 1px solid;
+  }
+}
+
+#changelist-filter h2 {
+    font-size: 0.875rem;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     text-transform: uppercase;
     letter-spacing: 0.5px;
     padding: 5px 15px;
@@ -144,12 +178,42 @@
     border-bottom: none;
 }
 
+<<<<<<< HEAD
 #changelist-filter h3 {
+=======
+#changelist-filter h3,
+#changelist-filter details summary {
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     font-weight: 400;
     padding: 0 15px;
     margin-bottom: 10px;
 }
 
+<<<<<<< HEAD
+=======
+#changelist-filter details summary > * {
+    display: inline;
+}
+
+#changelist-filter details > summary {
+    list-style-type: none;
+}
+
+#changelist-filter details > summary::-webkit-details-marker {
+    display: none;
+}
+
+#changelist-filter details > summary::before {
+    content: '→';
+    font-weight: bold;
+    color: var(--link-hover-color);
+}
+
+#changelist-filter details[open] > summary::before {
+    content: '↓';
+}
+
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
 #changelist-filter ul {
     margin: 5px 0;
     padding: 0 15px 15px;
@@ -169,8 +233,12 @@
 #changelist-filter a {
     display: block;
     color: var(--body-quiet-color);
+<<<<<<< HEAD
     text-overflow: ellipsis;
     overflow-x: hidden;
+=======
+    word-break: break-word;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
 }
 
 #changelist-filter li.selected {
@@ -189,14 +257,21 @@
     color: var(--link-hover-color);
 }
 
+<<<<<<< HEAD
 #changelist-filter #changelist-filter-clear a {
     font-size: 13px;
     padding-bottom: 10px;
+=======
+#changelist-filter #changelist-filter-extra-actions {
+    font-size: 0.8125rem;
+    margin-bottom: 10px;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     border-bottom: 1px solid var(--hairline-color);
 }
 
 /* DATE DRILLDOWN */
 
+<<<<<<< HEAD
 .change-list ul.toplinks {
     display: block;
     float: left;
@@ -267,6 +342,29 @@
     background: var(--link-hover-color);
 }
 
+=======
+.change-list .toplinks {
+    display: flex;
+    padding-bottom: 5px;
+    flex-wrap: wrap;
+    gap: 3px 17px;
+    font-weight: bold;
+}
+
+.change-list .toplinks a {
+    font-size: 0.8125rem;
+}
+
+.change-list .toplinks .date-back {
+    color: var(--body-quiet-color);
+}
+
+.change-list .toplinks .date-back:focus,
+.change-list .toplinks .date-back:hover {
+    color: var(--link-hover-color);
+}
+
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
 /* ACTIONS */
 
 .filtered .actions {
@@ -278,31 +376,64 @@
     vertical-align: baseline;
 }
 
+<<<<<<< HEAD
 #changelist table tbody tr.selected {
     background-color: var(--selected-row);
 }
 
+=======
+/* Once the :has() pseudo-class is supported by all browsers, the tr.selected
+   selector and the JS adding the class can be removed. */
+#changelist tbody tr.selected {
+    background-color: var(--selected-row);
+}
+
+#changelist tbody tr:has(.action-select:checked) {
+    background-color: var(--selected-row);
+}
+
+@media (forced-colors: active) {
+    #changelist tbody tr.selected {
+        background-color: SelectedItem;
+    }
+    #changelist tbody tr:has(.action-select:checked) {
+        background-color: SelectedItem;
+    }
+}
+
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
 #changelist .actions {
     padding: 10px;
     background: var(--body-bg);
     border-top: none;
     border-bottom: none;
+<<<<<<< HEAD
     line-height: 24px;
+=======
+    line-height: 1.5rem;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     color: var(--body-quiet-color);
     width: 100%;
 }
 
+<<<<<<< HEAD
 #changelist .actions.selected { /* XXX Probably unused? */
     background: var(--body-bg);
     border-top: 1px solid var(--body-bg);
     border-bottom: 1px solid #edecd6;
 }
 
+=======
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
 #changelist .actions span.all,
 #changelist .actions span.action-counter,
 #changelist .actions span.clear,
 #changelist .actions span.question {
+<<<<<<< HEAD
     font-size: 13px;
+=======
+    font-size: 0.8125rem;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     margin: 0 0.5em;
 }
 
@@ -312,11 +443,19 @@
 
 #changelist .actions select {
     vertical-align: top;
+<<<<<<< HEAD
     height: 24px;
     color: var(--body-fg);
     border: 1px solid var(--border-color);
     border-radius: 4px;
     font-size: 14px;
+=======
+    height: 1.5rem;
+    color: var(--body-fg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.875rem;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     padding: 0 0 0 4px;
     margin: 0;
     margin-left: 10px;
@@ -329,17 +468,29 @@
 #changelist .actions label {
     display: inline-block;
     vertical-align: middle;
+<<<<<<< HEAD
     font-size: 13px;
 }
 
 #changelist .actions .button {
     font-size: 13px;
+=======
+    font-size: 0.8125rem;
+}
+
+#changelist .actions .button {
+    font-size: 0.8125rem;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     border: 1px solid var(--border-color);
     border-radius: 4px;
     background: var(--body-bg);
     box-shadow: 0 -15px 20px -10px rgba(0, 0, 0, 0.15) inset;
     cursor: pointer;
+<<<<<<< HEAD
     height: 24px;
+=======
+    height: 1.5rem;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     line-height: 1;
     padding: 4px 8px;
     margin: 0;

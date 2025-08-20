@@ -14,11 +14,19 @@ input[type="submit"], button {
 
     td, th {
         padding: 10px;
+<<<<<<< HEAD
         font-size: 14px;
     }
 
     .small {
         font-size: 12px;
+=======
+        font-size: 0.875rem;
+    }
+
+    .small {
+        font-size: 0.75rem;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     }
 
     /* Layout */
@@ -28,7 +36,11 @@ input[type="submit"], button {
     }
 
     #content {
+<<<<<<< HEAD
         padding: 20px 30px 30px;
+=======
+        padding: 15px 20px 20px;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     }
 
     div.breadcrumbs {
@@ -43,9 +55,14 @@ input[type="submit"], button {
         justify-content: flex-start;
     }
 
+<<<<<<< HEAD
     #branding h1 {
         margin: 0 0 8px;
         font-size: 20px;
+=======
+    #site-name {
+        margin: 0 0 8px;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
         line-height: 1.2;
     }
 
@@ -88,7 +105,11 @@ input[type="submit"], button {
     }
 
     td .changelink, td .addlink {
+<<<<<<< HEAD
         font-size: 13px;
+=======
+        font-size: 0.8125rem;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     }
 
     /* Changelist */
@@ -105,13 +126,21 @@ input[type="submit"], button {
     }
 
     #changelist-search label {
+<<<<<<< HEAD
         line-height: 22px;
+=======
+        line-height: 1.375rem;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     }
 
     #toolbar form #searchbar {
         flex: 1 0 auto;
         width: 0;
+<<<<<<< HEAD
         height: 22px;
+=======
+        height: 1.375rem;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
         margin: 0 10px 0 6px;
     }
 
@@ -131,10 +160,13 @@ input[type="submit"], button {
         padding: 15px 0;
     }
 
+<<<<<<< HEAD
     #changelist .actions.selected {
         border: none;
     }
 
+=======
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     #changelist .actions label {
         display: flex;
     }
@@ -152,7 +184,11 @@ input[type="submit"], button {
     #changelist .actions span.clear,
     #changelist .actions span.question,
     #changelist .actions span.action-counter {
+<<<<<<< HEAD
         font-size: 11px;
+=======
+        font-size: 0.6875rem;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
         margin: 0 10px 0 0;
     }
 
@@ -176,9 +212,20 @@ input[type="submit"], button {
     /* Forms */
 
     label {
+<<<<<<< HEAD
         font-size: 14px;
     }
 
+=======
+        font-size: 1rem;
+    }
+
+    /*
+    Minifiers remove the default (text) "type" attribute from "input" HTML
+    tags. Add input:not([type]) to make the CSS stylesheet work the same.
+    */
+    .form-row input:not([type]),
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     .form-row input[type=text],
     .form-row input[type=password],
     .form-row input[type=email],
@@ -191,12 +238,21 @@ input[type="submit"], button {
         box-sizing: border-box;
         margin: 0;
         padding: 6px 8px;
+<<<<<<< HEAD
         min-height: 36px;
         font-size: 14px;
     }
 
     .form-row select {
         height: 36px;
+=======
+        min-height: 2.25rem;
+        font-size: 1rem;
+    }
+
+    .form-row select {
+        height: 2.25rem;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     }
 
     .form-row select[multiple] {
@@ -204,12 +260,15 @@ input[type="submit"], button {
         min-height: 0;
     }
 
+<<<<<<< HEAD
     fieldset .fieldBox {
         float: none;
         margin: 0 -10px;
         padding: 0 10px;
     }
 
+=======
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     fieldset .fieldBox + .fieldBox {
         margin-top: 10px;
         padding-top: 10px;
@@ -232,6 +291,7 @@ input[type="submit"], button {
         margin-left: 15px;
     }
 
+<<<<<<< HEAD
     form .aligned ul.radiolist {
         margin-left: 2px;
     }
@@ -250,6 +310,22 @@ input[type="submit"], button {
     select + .related-widget-wrapper-link,
     .related-widget-wrapper-link + .related-widget-wrapper-link {
         margin-left: 10px;
+=======
+    form .aligned div.radiolist {
+        margin-left: 2px;
+    }
+
+    .submit-row {
+        padding: 8px;
+    }
+
+    .submit-row a.deletelink {
+        padding: 10px 7px;
+    }
+
+    .button, input[type=submit], input[type=button], .submit-row input, a.button {
+        padding: 7px;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     }
 
     /* Selector */
@@ -264,12 +340,17 @@ input[type="submit"], button {
         align-items: center;
     }
 
+<<<<<<< HEAD
     .selector .selector-filter label {
         margin: 0 8px 0 0;
     }
 
     .selector .selector-filter input {
         width: auto;
+=======
+    .selector .selector-filter input {
+        width: 100%;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
         min-height: 0;
         flex: 1 1;
     }
@@ -287,6 +368,7 @@ input[type="submit"], button {
         margin-bottom: 5px;
     }
 
+<<<<<<< HEAD
     .selector ul.selector-chooser {
         width: 26px;
         height: 52px;
@@ -311,6 +393,9 @@ input[type="submit"], button {
     }
 
     a.selector-chooseall, a.selector-clearall {
+=======
+    .selector-chooseall, .selector-clearall {
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
         align-self: center;
     }
 
@@ -332,10 +417,14 @@ input[type="submit"], button {
     }
 
     .stacked ul.selector-chooser {
+<<<<<<< HEAD
         width: 52px;
         height: 26px;
         padding: 0 2px;
         margin: 15px auto;
+=======
+        padding: 0 2px;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
         transform: none;
     }
 
@@ -343,6 +432,7 @@ input[type="submit"], button {
         padding: 3px;
     }
 
+<<<<<<< HEAD
     .stacked .selector-add, .stacked .selector-remove {
         background-size: 20px auto;
     }
@@ -379,26 +469,39 @@ input[type="submit"], button {
         background-position: 0 -20px;
     }
 
+=======
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     .help-tooltip, .selector .help-icon {
         display: none;
     }
 
+<<<<<<< HEAD
     form .form-row p.datetime {
         width: 100%;
     }
 
+=======
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     .datetime input {
         width: 50%;
         max-width: 120px;
     }
 
     .datetime span {
+<<<<<<< HEAD
         font-size: 13px;
+=======
+        font-size: 0.8125rem;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     }
 
     .datetime .timezonewarning {
         display: block;
+<<<<<<< HEAD
         font-size: 11px;
+=======
+        font-size: 0.6875rem;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
         color: var(--body-quiet-color);
     }
 
@@ -435,7 +538,11 @@ input[type="submit"], button {
         padding: 15px 20px;
     }
 
+<<<<<<< HEAD
     .login #branding h1 {
+=======
+    .login #site-name {
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
         margin: 0;
     }
 
@@ -467,6 +574,7 @@ input[type="submit"], button {
 @media (max-width: 767px) {
     /* Layout */
 
+<<<<<<< HEAD
     #header, #content, #footer {
         padding: 15px;
     }
@@ -475,6 +583,12 @@ input[type="submit"], button {
         padding: 0;
     }
 
+=======
+    #header, #content {
+        padding: 15px;
+    }
+
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     div.breadcrumbs {
         padding: 10px 15px;
     }
@@ -496,7 +610,11 @@ input[type="submit"], button {
 
     #content-related .module h2 {
         padding: 10px 15px;
+<<<<<<< HEAD
         font-size: 16px;
+=======
+        font-size: 1rem;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     }
 
     /* Changelist */
@@ -557,8 +675,11 @@ input[type="submit"], button {
 
     .aligned .form-row,
     .aligned .form-row > div {
+<<<<<<< HEAD
         display: flex;
         flex-wrap: wrap;
+=======
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
         max-width: 100vw;
     }
 
@@ -566,6 +687,17 @@ input[type="submit"], button {
         width: calc(100vw - 30px);
     }
 
+<<<<<<< HEAD
+=======
+    .flex-container {
+        flex-flow: column;
+    }
+
+    .flex-container.checkbox-row {
+        flex-flow: row;
+    }
+
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     textarea {
         max-width: none;
     }
@@ -579,12 +711,18 @@ input[type="submit"], button {
         padding-top: 15px;
     }
 
+<<<<<<< HEAD
     fieldset.collapsed .form-row {
         display: none;
     }
 
     .aligned label {
         width: 100%;
+=======
+    .aligned label {
+        width: 100%;
+        min-width: auto;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
         padding: 0 0 10px;
     }
 
@@ -599,10 +737,13 @@ input[type="submit"], button {
         max-width: 100%;
     }
 
+<<<<<<< HEAD
     .aligned .checkbox-row {
         align-items: center;
     }
 
+=======
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     .aligned .checkbox-row input {
         flex: 0 1 auto;
         margin: 0;
@@ -621,8 +762,12 @@ input[type="submit"], button {
     }
 
     .aligned p.file-upload {
+<<<<<<< HEAD
         margin-left: 0;
         font-size: 13px;
+=======
+        font-size: 0.8125rem;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     }
 
     span.clearable-file-input {
@@ -630,7 +775,11 @@ input[type="submit"], button {
     }
 
     span.clearable-file-input label {
+<<<<<<< HEAD
         font-size: 13px;
+=======
+        font-size: 0.8125rem;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
         padding-bottom: 0;
     }
 
@@ -645,17 +794,31 @@ input[type="submit"], button {
         padding: 0;
     }
 
+<<<<<<< HEAD
     form .aligned ul {
+=======
+    form .aligned ul,
+    form .aligned ul.errorlist {
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
         margin-left: 0;
         padding-left: 0;
     }
 
+<<<<<<< HEAD
     form .aligned ul.radiolist {
+=======
+    form .aligned div.radiolist {
+        margin-top: 5px;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
         margin-right: 15px;
         margin-bottom: -3px;
     }
 
+<<<<<<< HEAD
     form .aligned ul.radiolist:not(.inline) li + li {
+=======
+    form .aligned div.radiolist:not(.inline) div + div {
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
         margin-top: 5px;
     }
 
@@ -669,6 +832,10 @@ input[type="submit"], button {
 
     .related-widget-wrapper .selector {
         order: 1;
+<<<<<<< HEAD
+=======
+        flex: 1 0 auto;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     }
 
     .related-widget-wrapper > a {
@@ -683,15 +850,19 @@ input[type="submit"], button {
         align-self: center;
     }
 
+<<<<<<< HEAD
     select + .related-widget-wrapper-link,
     .related-widget-wrapper-link + .related-widget-wrapper-link {
         margin-left: 15px;
     }
 
+=======
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     /* Selector */
 
     .selector {
         flex-direction: column;
+<<<<<<< HEAD
     }
 
     .selector > * {
@@ -700,6 +871,12 @@ input[type="submit"], button {
 
     .selector-available, .selector-chosen {
         margin-bottom: 0;
+=======
+        gap: 10px 0;
+    }
+
+    .selector-available, .selector-chosen {
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
         flex: 1 1 auto;
     }
 
@@ -708,12 +885,19 @@ input[type="submit"], button {
     }
 
     .selector ul.selector-chooser {
+<<<<<<< HEAD
         display: block;
         float: none;
         width: 52px;
         height: 26px;
         padding: 0 2px;
         margin: 15px auto 20px;
+=======
+        display: flex;
+        width: 60px;
+        height: 30px;
+        padding: 0 2px;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
         transform: none;
     }
 
@@ -725,6 +909,7 @@ input[type="submit"], button {
         background-position: 0 0;
     }
 
+<<<<<<< HEAD
     .active.selector-remove:focus, .active.selector-remove:hover {
         background-position: 0 -20px;
     }
@@ -735,6 +920,18 @@ input[type="submit"], button {
 
     .active.selector-add:focus, .active.selector-add:hover {
         background-position: 0 -60px;
+=======
+    :enabled.selector-remove:focus, :enabled.selector-remove:hover {
+        background-position: 0 -24px;
+    }
+
+    .selector-add  {
+        background-position: 0 -48px;
+    }
+
+    :enabled.selector-add:focus, :enabled.selector-add:hover {
+        background-position: 0 -72px;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     }
 
     /* Inlines */
@@ -811,6 +1008,7 @@ input[type="submit"], button {
     /* Submit row */
 
     .submit-row {
+<<<<<<< HEAD
         padding: 10px 10px 0;
         margin: 0 0 15px;
         display: flex;
@@ -824,15 +1022,32 @@ input[type="submit"], button {
     .submit-row input, .submit-row input.default, .submit-row a, .submit-row a.closelink {
         float: none;
         margin: 0 0 10px;
+=======
+        padding: 10px;
+        margin: 0 0 15px;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .submit-row input, .submit-row input.default, .submit-row a {
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
         text-align: center;
     }
 
     .submit-row a.closelink {
         padding: 10px 0;
+<<<<<<< HEAD
     }
 
     .submit-row p.deletelink-box {
         order: 4;
+=======
+        text-align: center;
+    }
+
+    .submit-row a.deletelink {
+        margin: 0;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     }
 
     /* Messages */
@@ -906,7 +1121,11 @@ input[type="submit"], button {
     .errornote {
         margin: 0 0 20px;
         padding: 8px 12px;
+<<<<<<< HEAD
         font-size: 13px;
+=======
+        font-size: 0.8125rem;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     }
 
     /* Calendar and clock */
@@ -953,8 +1172,13 @@ input[type="submit"], button {
 
     .calendar-shortcuts {
         padding: 10px 0;
+<<<<<<< HEAD
         font-size: 12px;
         line-height: 12px;
+=======
+        font-size: 0.75rem;
+        line-height: 0.75rem;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     }
 
     .calendar-shortcuts a {
@@ -986,7 +1210,11 @@ input[type="submit"], button {
     /* History */
 
     table#change-history tbody th, table#change-history tbody td {
+<<<<<<< HEAD
         font-size: 13px;
+=======
+        font-size: 0.8125rem;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
         word-break: break-word;
     }
 
@@ -997,7 +1225,11 @@ input[type="submit"], button {
     /* Docs */
 
     table.model tbody th, table.model tbody td {
+<<<<<<< HEAD
         font-size: 13px;
+=======
+        font-size: 0.8125rem;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
         word-break: break-word;
     }
 }

@@ -12,7 +12,12 @@
 }
 
 .login #header h1 {
+<<<<<<< HEAD
     font-size: 18px;
+=======
+    font-size: 1.125rem;
+    margin: 0;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
 }
 
 .login #header h1 a {
@@ -20,7 +25,11 @@
 }
 
 .login #content {
+<<<<<<< HEAD
     padding: 20px 20px 0;
+=======
+    padding: 20px;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
 }
 
 .login #container {

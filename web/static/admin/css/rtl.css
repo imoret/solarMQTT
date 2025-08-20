@@ -13,7 +13,11 @@ th {
     margin-right: 1.5em;
 }
 
+<<<<<<< HEAD
 .viewlink, .addlink, .changelink {
+=======
+.viewlink, .addlink, .changelink, .hidelink {
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     padding-left: 0;
     padding-right: 16px;
     background-position: 100% 1px;
@@ -107,6 +111,7 @@ thead th.sorted .text {
     border-left: none;
 }
 
+<<<<<<< HEAD
 /* FORMS */
 
 .aligned label {
@@ -124,6 +129,27 @@ thead th.sorted .text {
 
 .submit-row input.default {
     margin-left: 0;
+=======
+.paginator .end {
+    margin-left: 6px;
+    margin-right: 0;
+}
+
+.paginator input {
+    margin-left: 0;
+    margin-right: auto;
+}
+
+/* FORMS */
+
+.aligned label {
+    padding: 0 0 3px 1em;
+}
+
+.submit-row a.deletelink {
+    margin-left: 0;
+    margin-right: auto;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
 }
 
 .vDateField, .vTimeField {
@@ -134,6 +160,7 @@ thead th.sorted .text {
     margin-left: 5px;
 }
 
+<<<<<<< HEAD
 form .aligned p.help, form .aligned div.help {
     clear: right;
 }
@@ -141,6 +168,13 @@ form .aligned p.help, form .aligned div.help {
 form .aligned ul {
     margin-right: 163px;
     margin-left: 0;
+=======
+form .aligned ul {
+    margin-right: 163px;
+    padding-right: 10px;
+    margin-left: 0;
+    padding-left: 0;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
 }
 
 form ul.inline li {
@@ -149,12 +183,43 @@ form ul.inline li {
     padding-left: 7px;
 }
 
+<<<<<<< HEAD
 input[type=submit].default, .submit-row input.default {
     float: left;
 }
 
 fieldset .fieldBox {
     float: right;
+=======
+form .aligned p.help,
+form .aligned div.help {
+    margin-left: 0;
+    margin-right: 160px;
+    padding-right: 10px;
+}
+
+form div.help ul,
+form .aligned .checkbox-row + .help,
+form .aligned p.date div.help.timezonewarning,
+form .aligned p.datetime div.help.timezonewarning,
+form .aligned p.time div.help.timezonewarning {
+    margin-right: 0;
+    padding-right: 0;
+}
+
+form .wide p.help,
+form .wide ul.errorlist,
+form .wide div.help {
+    padding-left: 0;
+    padding-right: 50px;
+}
+
+.submit-row {
+    text-align: right;
+}
+
+fieldset .fieldBox {
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
     margin-left: 20px;
     margin-right: 0;
 }
@@ -175,12 +240,20 @@ fieldset .fieldBox {
     top: 0;
     left: auto;
     right: 10px;
+<<<<<<< HEAD
+=======
+    background: url(../img/calendar-icons.svg) 0 -15px no-repeat;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
 }
 
 .calendarnav-next {
     top: 0;
     right: auto;
     left: 10px;
+<<<<<<< HEAD
+=======
+    background: url(../img/calendar-icons.svg) 0 0 no-repeat;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
 }
 
 .calendar caption, .calendarbox h2 {
@@ -195,6 +268,43 @@ fieldset .fieldBox {
     text-align: right;
 }
 
+<<<<<<< HEAD
+=======
+.selector-add {
+    background: url(../img/selector-icons.svg) 0 -96px no-repeat;
+    background-size: 24px auto;
+}
+
+:enabled.selector-add:focus, :enabled.selector-add:hover {
+    background-position: 0 -120px;
+}
+
+.selector-remove {
+    background: url(../img/selector-icons.svg) 0 -144px no-repeat;
+    background-size: 24px auto;
+}
+
+:enabled.selector-remove:focus, :enabled.selector-remove:hover {
+    background-position: 0 -168px;
+}
+
+.selector-chooseall {
+    background: url(../img/selector-icons.svg) right -128px no-repeat;
+}
+
+:enabled.selector-chooseall:focus, :enabled.selector-chooseall:hover {
+    background-position: 100% -144px;
+}
+
+.selector-clearall {
+    background: url(../img/selector-icons.svg) 0 -160px no-repeat;
+}
+
+:enabled.selector-clearall:focus, :enabled.selector-clearall:hover {
+    background-position: 0 -176px;
+}
+
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
 .inline-deletelink {
     float: left;
 }
@@ -225,3 +335,14 @@ form .form-row p.datetime {
     margin-left: inherit;
     margin-right: 2px;
 }
+<<<<<<< HEAD
+=======
+
+.inline-group .tabular td.original p {
+    right: 0;
+}
+
+.selector .selector-chooser {
+    margin: 0;
+}
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89

@@ -90,10 +90,16 @@
             }
             message = interpolate(message, [timezoneOffset]);
 
+<<<<<<< HEAD
             const warning = document.createElement('span');
             warning.className = warningClass;
             warning.textContent = message;
             inp.parentNode.appendChild(document.createElement('br'));
+=======
+            const warning = document.createElement('div');
+            warning.classList.add('help', warningClass);
+            warning.textContent = message;
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
             inp.parentNode.appendChild(warning);
         },
         // Add clock widget to a given field
@@ -388,6 +394,7 @@
             DateTimeShortcuts.calendars[num].drawNextMonth();
         },
         handleCalendarCallback: function(num) {
+<<<<<<< HEAD
             let format = get_format('DATE_INPUT_FORMATS')[0];
             // the format needs to be escaped a little
             format = format.replace('\\', '\\\\')
@@ -395,6 +402,9 @@
                 .replace('\n', '\\n')
                 .replace('\t', '\\t')
                 .replace("'", "\\'");
+=======
+            const format = get_format('DATE_INPUT_FORMATS')[0];
+>>>>>>> 7ac3d760cfa05083e5d1c3ec4c1277d993f18c89
             return function(y, m, d) {
                 DateTimeShortcuts.calendarInputs[num].value = new Date(y, m - 1, d).strftime(format);
                 DateTimeShortcuts.calendarInputs[num].focus();

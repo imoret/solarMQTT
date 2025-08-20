@@ -71,22 +71,14 @@ def nuevo_archivo(request):
         conf = {'data':data, 'inversores':inv, 'arduinos_serial':arduinos_serial, 'arduinos_MQTT':arduinos_MQTT,'shellys':shellys, 'dispositivos':disp}
         with open('../excedentes/excedentes.conf', 'w') as f:
             json.dump(conf, f, indent=4)
-        return render(request, 'excedentes/dash_board.html', {'data':data})
+        dispositivos = Dispositivos.objects.all()
+        return render(request, 'excedentes/dash_board.html', {'dispositivos':dispositivos})
     else:
         return redirect('accounts/login/')
     
 def get_data(request):
     if request.user.is_authenticated:
         return JsonResponse(settings.ESTADO)
-    else:
-        return redirect('accounts/login/')
-    
-def get_data_disp(request, disp):
-    if request.user.is_authenticated:
-        dispositivo = Dispositivos.objects.filter(nombre=disp)[0]
-        datos['instantaneos'] = settings.ESTADO['dispositivos'][dispositivo.nombre]
-        datos['historicos'] = settings.ESTADO['historico_disp'][dispositivo.nombre]
-        return JsonResponse(datos)
     else:
         return redirect('accounts/login/')
     
@@ -118,12 +110,5 @@ def instalacion(request):
         if len(historico) == 0:
             historico = settings.ESTADO['historico_5min']
         return render(request, 'excedentes/instalacion.html', {'historico':historico})
-    else:
-        return redirect('accounts/login/')
-    
-def disp_detail(request, disp):
-    if request.user.is_authenticated:
-        dispositivo = Dispositivos.objects.filter(nombre=disp)[0]
-        return render(request, 'excedentes/disp_detail.html', {'d':dispositivo})
     else:
         return redirect('accounts/login/')
