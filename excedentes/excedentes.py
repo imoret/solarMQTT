@@ -314,13 +314,19 @@ class instalacion:
                     if msg['comando'] == 'setManual':
                         self.dispositivos[msg['dispositivo']].modoManual = True if msg['value'] == 'true' else False
                         self.dispositivos[msg['dispositivo']].publica_actividad(self.mqtt_client)
-                        self.logger.debug("%s modo manual a %s" %(msg['dispositivo'], self.dispositivos[msg['dispositivo']].modoManual))
+                        self.logger.info("%s modo manual a %s" %(msg['dispositivo'], self.dispositivos[msg['dispositivo']].modoManual))
 
                     if msg['comando'] == 'set_onOff':
                         E = 255 if msg['value'] == 'true' else 0
                         self.dispositivos[msg['dispositivo']].setPower(E)
                         self.dispositivos[msg['dispositivo']].publica_actividad(self.mqtt_client)
-                        self.logger.debug("%s puesto manualmente a %s" %(msg['dispositivo'], E))
+                        self.logger.info("%s puesto manualmente a %s" %(msg['dispositivo'], E))
+
+                    if msg['comando'] == 'resetDispositivo':
+                        self.dispositivos[msg['dispositivo']].nuevaConf()
+                        self.dispositivos[msg['dispositivo']].resetea()
+                        self.dispositivos[msg['dispositivo']].publica_actividad(self.mqtt_client)
+                        self.logger.info("%s reseteado" %(msg['dispositivo']))
         except Exception as e:
             self.logger.error("Error en procesaComando: %s" % e)
     
