@@ -276,6 +276,7 @@ class instalacion:
                                 self.logger.info("Orden setup para %s" % d.nombre)
                                 p=d.powerAct
                                 d.setup()
+                                time.sleep(1)
                                 d.setPower(p)
                 if destino == "Dispositivos":
                     pass
