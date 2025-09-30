@@ -274,7 +274,9 @@ class instalacion:
                         for d in self.dispositivos.values():
                             if a.nombre == d.ard.nombre:
                                 self.logger.info("Orden setup para %s" % d.nombre)
+                                p=d.powerAct
                                 d.setup()
+                                d.setPower(p)
                 if destino == "Dispositivos":
                     pass
             
