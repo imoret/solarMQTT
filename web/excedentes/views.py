@@ -6,6 +6,8 @@ from excedentes.models import *
 from django.conf import settings
 from . import mqtt
 import time
+import subprocess
+import os
 
 # Create your views here.
 def dash_board(request):
@@ -132,5 +134,38 @@ def dispositivo(request, nombre_dispositivo):
     if request.user.is_authenticated:
         dispositivo = Dispositivos.objects.get(nombre=nombre_dispositivo)
         return render(request, 'excedentes/dispositivo.html', {'dispositivo': dispositivo})
+    else:
+        return redirect('accounts/login/')
+
+def reboot_system(request):
+    if request.user.is_authenticated:
+        message = '{"comando":"rebootSystem"}'
+        topic='Dispositivos/rebootSystem/command'
+        mqtt.client.publish(topic,message)
+        time.sleep(1)
+        return render(request, 'excedentes/reboot_system.html', {})
+    else:
+        return redirect('accounts/login/')
+    
+def rebooting_now(request):
+    if request.user.is_authenticated:
+        try:
+            # Opción 1: Usando subprocess (más seguro y controlado)
+            subprocess.Popen(['sudo', 'reboot'], 
+                           stdout=subprocess.DEVNULL, 
+                           stderr=subprocess.DEVNULL)
+            
+            # Opción 2: Usando os.system (alternativa)
+            # os.system('sudo reboot')
+            
+            # Opción 3: Para reinicio con delay (recomendado)
+            # subprocess.Popen(['sudo', 'shutdown', '-r', '+1'], 
+            #                stdout=subprocess.DEVNULL, 
+            #                stderr=subprocess.DEVNULL)
+            
+        except Exception as e:
+            print(f"Error al reiniciar el sistema: {e}")
+        
+        return render(request, 'excedentes/rebooting_now.html', {})
     else:
         return redirect('accounts/login/')
