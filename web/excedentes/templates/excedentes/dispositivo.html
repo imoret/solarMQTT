@@ -2,31 +2,101 @@
 
 {% block content %}
 <section class="container-md">
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h1 class="display-4 fw-bold text-primary">{{ dispositivo.nombre }}</h1>
+            <hr class="w-50 mx-auto">
+        </div>
+    </div>
     <div class="row card cajita">
         <div class="col-md-12 card-body">
-            <h5 class="card-tittle">Dispositivo: {{ dispositivo.nombre }}</h5>
-            <p class="card-text">Tipo: {{ dispositivo.tipo }}</p>
-            <p class="card-text">Power: {{ dispositivo.power }}</p>
-            <p class="card-text">Ardu: {{ dispositivo.ardu }}</p>
-            <p class="card-text">Pin: {{ dispositivo.pin }}</p>
-            <p class="card-text">PinPower: {{ dispositivo.pinPower }}</p>
-            <p class="card-text">MinPower: {{ dispositivo.minPower }}</p>
-            <p class="card-text">Tiempo_reaccion: {{ dispositivo.tiempo_reaccion }}</p>
-            <p class="card-text">Modos: 
-                <ul><li class="card-text">Lunes: {{ dispositivo.modoLunes }}</li>
-                    <li class="card-text">Martes: {{ dispositivo.modoMartes }}</li>
-                    <li class="card-text">Miercoles: {{ dispositivo.modoMiercoles }}</li>
-                    <li class="card-text">Jueves: {{ dispositivo.modoJueves }}</li>
-                    <li class="card-text">Viernes:  {{ dispositivo.modoViernes }}</li>
-                    <li class="card-text">Sabado:  {{ dispositivo.modoSabado }}</li>
-                    <li class="card-text">Domingo:  {{ dispositivo.modoDomingo }}</li>
-                </ul></p>
-            
-            <div class="mt-3">
-                <a href="{% url 'reset_dispositivo' dispositivo_id=dispositivo.pk %}" class="btn btn-warning">
-                    <i class="bi bi-arrow-clockwise"></i> Reset Device
-                </a>
-            </div>
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="nombre" class="form-label">Nombre del Dispositivo</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" value="{{ dispositivo.nombre }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tipo" class="form-label">Tipo</label>
+                            <input type="text" class="form-control" id="tipo" name="tipo" value="{{ dispositivo.tipo }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="power" class="form-label">Power</label>
+                            <input type="number" step="0.01" class="form-control" id="power" name="power" value="{{ dispositivo.power }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="ardu" class="form-label">Ardu</label>
+                            <input type="text" class="form-control" id="ardu" name="ardu" value="{{ dispositivo.ardu }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="pin" class="form-label">Pin</label>
+                            <input type="number" class="form-control" id="pin" name="pin" value="{{ dispositivo.pin }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="pinPower" class="form-label">Pin Power</label>
+                            <input type="number" class="form-control" id="pinPower" name="pinPower" value="{{ dispositivo.pinPower }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="minPower" class="form-label">Potencia Mínima</label>
+                            <input type="number" step="0.01" class="form-control" id="minPower" name="minPower" value="{{ dispositivo.minPower }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="tiempo_reaccion" class="form-label">Tiempo de Reacción (segundos)</label>
+                            <input type="number" class="form-control" id="tiempo_reaccion" name="tiempo_reaccion" value="{{ dispositivo.tiempo_reaccion }}">
+                        </div>
+                    </div>
+                </div>
+
+                <h5 class="mt-4 mb-3">Modos por Día</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        {% for day in ['Lunes', 'Martes', 'Miercoles', 'Jueves'] %}
+                        <div class="mb-3">
+                            <label for="modo{{ day }}" class="form-label">{{ day }}</label>
+                            <select class="form-select" id="modo{{ day }}" name="modo{{ day }}">
+                                {% for mode in ['auto', 'on', 'off'] %}
+                                <option value="{{ mode }}" {% if dispositivo['modo' + day] == mode %}selected{% endif %}>
+                                    {{ mode|title }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        {% for day in ['Viernes', 'Sabado', 'Domingo'] %}
+                        <div class="mb-3">
+                            <label for="modo{{ day }}" class="form-label">{{ day }}</label>
+                            <select class="form-select" id="modo{{ day }}" name="modo{{ day }}">
+                                {% for mode in ['auto', 'on', 'off'] %}
+                                <option value="{{ mode }}" {% if dispositivo['modo' + day] == mode %}selected{% endif %}>
+                                    {{ mode|title }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'dispositivo_list' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                    <div>
+                        <a href="{% url 'reset_dispositivo' dispositivo_id=dispositivo.pk %}" class="btn btn-warning me-2">
+                            <i class="bi bi-arrow-clockwise"></i> Reset Device
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </div>
+            </form>
             </div>
         </div>
     </div>
