@@ -10,5 +10,7 @@ urlpatterns = [
     path('set_onOff/<str:nombre_dispositivo>/<str:onOff>/', views.set_onOff, name='set_onOff'),
     path('instalacion', views.instalacion, name='instalacion'),
     path('dispositivo/<str:nombre_dispositivo>/', views.dispositivo, name='dispositivo'),
-    path('reset_dispositivo/<int:dispositivo_id>/', views.reset_dispositivo, name='reset_dispositivo')
+    path('reset_dispositivo/<int:dispositivo_id>/', views.reset_dispositivo, name='reset_dispositivo'),
+    path('reboot_system/', views.reboot_system, name='reboot_system'),
+    path('rebooting_now/', views.rebooting_now, name='rebooting_now')
 ]
