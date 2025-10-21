@@ -133,7 +133,15 @@ def reset_dispositivo(request, dispositivo_id):
 def dispositivo(request, nombre_dispositivo):
     if request.user.is_authenticated:
         dispositivo = Dispositivos.objects.get(nombre=nombre_dispositivo)
-        return render(request, 'excedentes/dispositivo.html', {'dispositivo': dispositivo})
+        dias_semana_1 = ['Lunes', 'Martes', 'Miercoles', 'Jueves']
+        dias_semana_2 = ['Viernes', 'Sabado', 'Domingo']
+        modos = ['auto', 'on', 'off']
+        return render(request, 'excedentes/dispositivo.html', {
+            'dispositivo': dispositivo,
+            'dias_semana_1': dias_semana_1,
+            'dias_semana_2': dias_semana_2,
+            'modos': modos
+        })
     else:
         return redirect('accounts/login/')
 
