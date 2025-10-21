@@ -133,14 +133,20 @@ def reset_dispositivo(request, dispositivo_id):
 def dispositivo(request, nombre_dispositivo):
     if request.user.is_authenticated:
         dispositivo = Dispositivos.objects.get(nombre=nombre_dispositivo)
-        dias_semana_1 = ['Lunes', 'Martes', 'Miercoles', 'Jueves']
-        dias_semana_2 = ['Viernes', 'Sabado', 'Domingo']
-        modos = ['auto', 'on', 'off']
+        modos = Modos.objects.all()
+        modos_actuales = {
+            'Lunes': dispositivo.modoLunes.nombre if dispositivo.modoLunes else '',
+            'Martes': dispositivo.modoMartes.nombre if dispositivo.modoMartes else '',
+            'Miercoles': dispositivo.modoMiercoles.nombre if dispositivo.modoMiercoles else '',
+            'Jueves': dispositivo.modoJueves.nombre if dispositivo.modoJueves else '',
+            'Viernes': dispositivo.modoViernes.nombre if dispositivo.modoViernes else '',
+            'Sabado': dispositivo.modoSabado.nombre if dispositivo.modoSabado else '',
+            'Domingo': dispositivo.modoDomingo.nombre if dispositivo.modoDomingo else '',
+        }
         return render(request, 'excedentes/dispositivo.html', {
             'dispositivo': dispositivo,
-            'dias_semana_1': dias_semana_1,
-            'dias_semana_2': dias_semana_2,
-            'modos': modos
+            'modos': modos,
+            'modos_actuales': modos_actuales
         })
     else:
         return redirect('accounts/login/')
