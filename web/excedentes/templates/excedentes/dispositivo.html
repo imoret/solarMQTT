@@ -54,11 +54,11 @@
                 <h5 class="mt-4 mb-3">Modos por Día</h5>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        {% for day in ['Lunes', 'Martes', 'Miercoles', 'Jueves'] %}
+                        {% for day in dias_semana_1 %}
                         <div class="mb-3">
                             <label for="modo{{ day }}" class="form-label">{{ day }}</label>
                             <select class="form-select" id="modo{{ day }}" name="modo{{ day }}">
-                                {% for mode in ['auto', 'on', 'off'] %}
+                                {% for mode in modos %}
                                 <option value="{{ mode }}" {% if dispositivo['modo' + day] == mode %}selected{% endif %}>
                                     {{ mode|title }}
                                 </option>
@@ -68,11 +68,11 @@
                         {% endfor %}
                     </div>
                     <div class="col-md-6">
-                        {% for day in ['Viernes', 'Sabado', 'Domingo'] %}
+                        {% for day in dias_semana_2 %}
                         <div class="mb-3">
                             <label for="modo{{ day }}" class="form-label">{{ day }}</label>
                             <select class="form-select" id="modo{{ day }}" name="modo{{ day }}">
-                                {% for mode in ['auto', 'on', 'off'] %}
+                                {% for mode in modos %}
                                 <option value="{{ mode }}" {% if dispositivo['modo' + day] == mode %}selected{% endif %}>
                                     {{ mode|title }}
                                 </option>
