@@ -12,5 +12,7 @@ urlpatterns = [
     path('dispositivo/<str:nombre_dispositivo>/', views.dispositivo, name='dispositivo'),
     path('reset_dispositivo/<int:dispositivo_id>/', views.reset_dispositivo, name='reset_dispositivo'),
     path('reboot_system/', views.reboot_system, name='reboot_system'),
-    path('rebooting_now/', views.rebooting_now, name='rebooting_now')
+    path('reboot_server/', views.reboot_server, name='reboot_server'),
+    path('rebooting_now/', views.rebooting_now, name='rebooting_now'),
+    path('rebooting_server_now/', views.rebooting_server_now, name='rebooting_server_now')
 ]

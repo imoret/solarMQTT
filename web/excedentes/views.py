@@ -151,6 +151,36 @@ def dispositivo(request, nombre_dispositivo):
     else:
         return redirect('accounts/login/')
 
+def reboot_server(request):
+    if request.user.is_authenticated:
+        return render(request, 'excedentes/reboot_server.html', {})
+    else:
+        return redirect('accounts/login/')
+
+def rebooting_server_now(request):
+    if request.user.is_authenticated:
+        try:
+            # Opción 1: Usando subprocess (más seguro y controlado)
+            subprocess.Popen(['sudo', 'service', 'gunicorn', 'restart'], 
+                           stdout=subprocess.DEVNULL, 
+                           stderr=subprocess.DEVNULL)
+            
+            # Opción 2: Usando os.system (alternativa)
+            # os.system('sudo reboot')
+            
+            # Opción 3: Para reinicio con delay (recomendado)
+            # subprocess.Popen(['sudo', 'shutdown', '-r', '+1'], 
+            #                stdout=subprocess.DEVNULL, 
+            #                stderr=subprocess.DEVNULL)
+            
+        except Exception as e:
+            print(f"Error al reiniciar el servicio web: {e}")
+        
+        time.sleep(1)
+        return render(request, 'dash_board', {})
+    else:
+        return redirect('accounts/login/')
+
 def reboot_system(request):
     if request.user.is_authenticated:
         message = '{"comando":"rebootSystem"}'
