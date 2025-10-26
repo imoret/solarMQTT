@@ -29,19 +29,19 @@
             <a class="navbar-brand" href="/">Excedentes</a>
             {% if user.is_authenticated %}
             <ul class="navbar-nav mr-auto">
-              <li class="nav-item">
+              <li class="nav-item border-end border-dark border-2 px-2">
                 <a class="nav-link" href="/">Dashboard </a>
               </li>
-              <li class="nav-item">
+              <li class="nav-item border-end border-dark border-2 px-2">
                 <a class="nav-link" href="{% url 'config' %}">Config </a>
               </li>
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'reboot_system' %}">Reboot </a>
+              <li class="nav-item border-end border-dark border-2 px-2">
+                <a class="nav-link" href="{% url 'reboot_system' %}">Reboot system</a>
               </li>
-              <li class="nav-item">
+              <li class="nav-item border-end border-dark border-2 px-2">
                 <a class="nav-link" href="{% url 'reboot_server' %}">Reboot Web Server</a>
               </li>
-              <li class="nav-item">
+              <li class="nav-item px-2">
                 <a class="nav-link" href="{% url 'logout' %}">Logout </a>
               </li>
             </ul>
