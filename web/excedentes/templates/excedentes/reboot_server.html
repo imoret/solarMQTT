@@ -1,0 +1,106 @@
+{% extends 'excedentes/base.html' %}
+{% block head %}
+<style>
+    .reboot-content {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 70vh;
+    }
+    .countdown-container {
+        text-align: center;
+        padding: 2rem;
+        border-radius: 10px;
+        background-color: white;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        max-width: 500px;
+        width: 90%;
+    }
+    #countdown {
+        font-size: 4rem;
+        font-weight: bold;
+        color: #2c3e50;
+        margin: 1rem 0;
+    }
+    .message {
+        font-size: 1.2rem;
+        color: #7f8c8d;
+        margin-bottom: 1.5rem;
+    }
+    .btn-reboot {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        background-color: #e74c3c;
+        color: white;
+    }
+    .btn-reboot:hover {
+        background-color: #c0392b;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="reboot-content">
+    <div class="countdown-container">
+        <h1>Reinicio del Sistema</h1>
+        <div class="message">El servicio web se reiniciará en:</div>
+        <div id="countdown">01:00</div>
+        <button id="cancelBtn" class="btn-reboot">Cancelar Reinicio</button>
+    </div>
+</div>
+
+    <script>
+        let countdownInterval;
+        let remainingTime = 60; // 1 minutos en segundos
+
+        function updateDisplay(display, minutes, seconds) {
+            minutes = minutes < 10 ? "0" + minutes : minutes;
+            seconds = seconds < 10 ? "0" + seconds : seconds;
+            display.textContent = minutes + ":" + seconds;
+        }
+
+        function startCountdown(display) {
+            clearInterval(countdownInterval);
+            
+            countdownInterval = setInterval(function () {
+                const minutes = Math.floor(remainingTime / 60);
+                const seconds = remainingTime % 60;
+                
+                updateDisplay(display, minutes, seconds);
+
+                if (--remainingTime < 0) {
+                    clearInterval(countdownInterval);
+                    display.textContent = "Reiniciando...";
+                    setTimeout(() => {
+                        // Redirigir a la página que ejecuta el reinicio
+                        window.location.href = "/rebooting_server_now/";
+                    }, 1000);
+                }
+            }, 1000);
+        }
+
+        function stopCountdown() {
+            clearInterval(countdownInterval);
+        }
+
+        window.onload = function () {
+            const display = document.querySelector('#countdown');
+            const cancelBtn = document.getElementById('cancelBtn');
+
+            // Iniciar la cuenta atrás
+            startCountdown(display);
+
+            // Cancelar la cuenta atrás al hacer clic
+            cancelBtn.addEventListener('click', function() {
+                stopCountdown();
+                display.textContent = "Reinicio cancelado";
+                cancelBtn.style.display = 'none';
+                document.querySelector('.message').textContent = "El reinicio ha sido cancelado con éxito.";
+            });
+        };
+    </script>
+{% endblock %}
