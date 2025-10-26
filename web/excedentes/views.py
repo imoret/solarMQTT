@@ -176,8 +176,7 @@ def rebooting_server_now(request):
         except Exception as e:
             print(f"Error al reiniciar el servicio web: {e}")
         
-        time.sleep(1)
-        return render(request, 'dash_board', {})
+        return redirect('dash_board')
     else:
         return redirect('accounts/login/')
 
