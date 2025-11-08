@@ -320,13 +320,15 @@ class instalacion:
                                 self.dispositivos[msg['dispositivo']].tiempoModoManualActivo = msg['horas']*3600 + msg['minutos']*60
                                 self.dispositivos[msg['dispositivo']].modoManual = True
                                 self.dispositivos[msg['dispositivo']].publica_actividad(self.mqtt_client)
-                                self.logger.info("%s modo manual a %s hasta las %s:%s" %(msg['dispositivo'], self.dispositivos[msg['dispositivo']].modoManual, str(int(self.dispositivos[msg['dispositivo']].tiempoModoManualActivo/3600)).zfill(2), str(int((self.dispositivos[msg['dispositivo']].tiempoModoManualActivo%3600)/60)).zfill(2)))
+                                self.logger.info("%s modo manual a %s durante %s:%s" %(msg['dispositivo'], self.dispositivos[msg['dispositivo']].modoManual, str(int(self.dispositivos[msg['dispositivo']].tiempoModoManualActivo/3600)).zfill(2), str(int((self.dispositivos[msg['dispositivo']].tiempoModoManualActivo%3600)/60)).zfill(2)))
 
                                 if hasattr(self.dispositivos[msg['dispositivo']], 'threadModoManual'):
-                                    self.dispositivos[msg['dispositivo']].kill_threads = True
+                                    self.dispositivos[msg['dispositivo']].kill_threadModoManual = True
                                     self.dispositivos[msg['dispositivo']].threadModoManual.join()
+                                    del self.dispositivos[msg['dispositivo']].threadModoManual
 
                                 thread = threading.Thread(target=self.desactiva_modo_manual, args=(self.dispositivos[msg['dispositivo']],))
+                                self.dispositivos[msg['dispositivo']].kill_threadModoManual = False
                                 thread.start()
                                 self.dispositivos[msg['dispositivo']].threadModoManual = thread
                             else:
@@ -335,7 +337,7 @@ class instalacion:
                                 self.logger.info("%s modo manual a %s indefinidamente" %(msg['dispositivo'], self.dispositivos[msg['dispositivo']].modoManual))
                         else:
                             if hasattr(self.dispositivos[msg['dispositivo']], 'threadModoManual'):
-                                self.dispositivos[msg['dispositivo']].kill_threads = True
+                                self.dispositivos[msg['dispositivo']].kill_threadModoManual = True
                                 self.dispositivos[msg['dispositivo']].threadModoManual.join()
                                 del self.dispositivos[msg['dispositivo']].threadModoManual
 
@@ -358,11 +360,10 @@ class instalacion:
             self.logger.error("Error en procesaComando: %s" % e)
 
     def desactiva_modo_manual(self, dispositivo):
-        tiempo = dispositivo.tiempoModoManualActivo - int(time.time())
-        for i in range(tiempo):
+        for i in range(dispositivo.tiempoModoManualActivo):
             time.sleep(1)
-            if dispositivo.kill_threads:
-                dispositivo.kill_threads = False
+            if dispositivo.kill_threadModoManual:
+                dispositivo.kill_threadModoManual = False
                 exit()
         dispositivo.modoManual = False
         dispositivo.publica_actividad(self.mqtt_client)
