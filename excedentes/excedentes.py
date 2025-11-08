@@ -274,7 +274,10 @@ class instalacion:
                         for d in self.dispositivos.values():
                             if a.nombre == d.ard.nombre:
                                 self.logger.info("Orden setup para %s" % d.nombre)
+                                p=d.powerAct
                                 d.setup()
+                                time.sleep(1)
+                                d.setPower(p)
                 if destino == "Dispositivos":
                     pass
             
@@ -312,9 +315,31 @@ class instalacion:
                 if destino == "Dispositivos":
                     msg=json.loads(decoded_message)
                     if msg['comando'] == 'setManual':
-                        self.dispositivos[msg['dispositivo']].modoManual = True if msg['value'] == 'true' else False
-                        self.dispositivos[msg['dispositivo']].publica_actividad(self.mqtt_client)
-                        self.logger.info("%s modo manual a %s" %(msg['dispositivo'], self.dispositivos[msg['dispositivo']].modoManual))
+                        if msg['value'] == 'true':
+                            if msg['hora'] + msg['minutos'] > 0:
+                                self.dispositivos[msg['dispositivo']].tiempoModoManualActivo = msg['hora']*3600 + msg['minutos']*60
+                                self.dispositivos[msg['dispositivo']].modoManual = True
+                                self.dispositivos[msg['dispositivo']].publica_actividad(self.mqtt_client)
+                                self.logger.info("%s modo manual a %s hasta las %s:%s" %(msg['dispositivo'], self.dispositivos[msg['dispositivo']].modoManual, str(int(self.dispositivos[msg['dispositivo']].tiempoModoManualActivo/3600)).zfill(2), str(int((self.dispositivos[msg['dispositivo']].tiempoModoManualActivo%3600)/60)).zfill(2)))
+
+                                if hasattr(self.dispositivos[msg['dispositivo']], 'threadModoManual'):
+                                    self.dispositivos[msg['dispositivo']].threadModoManual.cancel()
+
+                                thread = threading.Thread(target=self.desactiva_modo_manual, args=(self.dispositivos[msg['dispositivo']],))
+                                thread.start()
+                                self.dispositivos[msg['dispositivo']].threadModoManual = thread
+                            else:
+                                self.dispositivos[msg['dispositivo']].modoManual = True
+                                self.dispositivos[msg['dispositivo']].publica_actividad(self.mqtt_client)
+                                self.logger.info("%s modo manual a %s indefinidamente" %(msg['dispositivo'], self.dispositivos[msg['dispositivo']].modoManual))
+                        else:
+                            if hasattr(self.dispositivos[msg['dispositivo']], 'threadModoManual'):
+                                self.dispositivos[msg['dispositivo']].threadModoManual.cancel()
+                                del self.dispositivos[msg['dispositivo']].threadModoManual
+
+                            self.dispositivos[msg['dispositivo']].modoManual = False
+                            self.dispositivos[msg['dispositivo']].publica_actividad(self.mqtt_client)
+                            self.logger.info("%s modo manual a %s" %(msg['dispositivo'], self.dispositivos[msg['dispositivo']].modoManual))
 
                     if msg['comando'] == 'set_onOff':
                         E = 255 if msg['value'] == 'true' else 0
@@ -329,7 +354,14 @@ class instalacion:
                         self.logger.info("%s reseteado" %(msg['dispositivo']))
         except Exception as e:
             self.logger.error("Error en procesaComando: %s" % e)
-    
+
+    def desactiva_modo_manual(self, dispositivo):
+        tiempo = dispositivo.tiempoModoManualActivo - int(time.time())
+        time.sleep(tiempo)
+        dispositivo.modoManual = False
+        dispositivo.publica_actividad(self.mqtt_client)
+        self.logger.info("%s modo manual a %s" %(dispositivo.nombre, dispositivo.modoManual))
+
     def update(self):
         while not kill_threads:
             try:

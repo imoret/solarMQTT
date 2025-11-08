@@ -6,12 +6,18 @@ from excedentes.models import *
 from django.conf import settings
 from . import mqtt
 import time
+import subprocess
+import os
 
 # Create your views here.
 def dash_board(request):
     if request.user.is_authenticated:
         dispositivos = Dispositivos.objects.all()
-        return render(request, 'excedentes/dash_board.html', {'dispositivos':dispositivos})
+        return render(request, 'excedentes/dash_board.html', {
+            'dispositivos': dispositivos,
+            'horas_range': range(25),
+            'minutos_range': range(60)
+        })
     else:
         return redirect('accounts/login/')
 
@@ -83,9 +89,9 @@ def get_data(request):
     else:
         return redirect('accounts/login/')
     
-def setManual(request, nombre_dispositivo, onOff):
+def setManual(request, nombre_dispositivo, onOff, horas=0, minutos=0):
     if request.user.is_authenticated:
-        mensaje = '{"comando":"setManual", "dispositivo":"%s", "value":"%s"}' %(nombre_dispositivo, onOff)
+        mensaje = '{"comando":"setManual", "dispositivo":"%s", "value":"%s", "horas":%s, "minutos":%s}' %(nombre_dispositivo, onOff, horas, minutos)
         topic='Dispositivos/%s/command'%nombre_dispositivo
         mqtt.client.publish(topic,mensaje)
         time.sleep(1)
@@ -131,6 +137,82 @@ def reset_dispositivo(request, dispositivo_id):
 def dispositivo(request, nombre_dispositivo):
     if request.user.is_authenticated:
         dispositivo = Dispositivos.objects.get(nombre=nombre_dispositivo)
-        return render(request, 'excedentes/dispositivo.html', {'dispositivo': dispositivo})
+        modos = Modos.objects.all()
+        modos_actuales = {
+            'Lunes': dispositivo.modoLunes.nombre if dispositivo.modoLunes else '',
+            'Martes': dispositivo.modoMartes.nombre if dispositivo.modoMartes else '',
+            'Miercoles': dispositivo.modoMiercoles.nombre if dispositivo.modoMiercoles else '',
+            'Jueves': dispositivo.modoJueves.nombre if dispositivo.modoJueves else '',
+            'Viernes': dispositivo.modoViernes.nombre if dispositivo.modoViernes else '',
+            'Sabado': dispositivo.modoSabado.nombre if dispositivo.modoSabado else '',
+            'Domingo': dispositivo.modoDomingo.nombre if dispositivo.modoDomingo else '',
+        }
+        return render(request, 'excedentes/dispositivo.html', {
+            'dispositivo': dispositivo,
+            'modos': modos,
+            'modos_actuales': modos_actuales
+        })
+    else:
+        return redirect('accounts/login/')
+
+def reboot_server(request):
+    if request.user.is_authenticated:
+        return render(request, 'excedentes/reboot_server.html', {})
+    else:
+        return redirect('accounts/login/')
+
+def rebooting_server_now(request):
+    if request.user.is_authenticated:
+        try:
+            # Opción 1: Usando subprocess (más seguro y controlado)
+            subprocess.Popen(['sudo', 'service', 'gunicorn', 'restart'], 
+                           stdout=subprocess.DEVNULL, 
+                           stderr=subprocess.DEVNULL)
+            
+            # Opción 2: Usando os.system (alternativa)
+            # os.system('sudo reboot')
+            
+            # Opción 3: Para reinicio con delay (recomendado)
+            # subprocess.Popen(['sudo', 'shutdown', '-r', '+1'], 
+            #                stdout=subprocess.DEVNULL, 
+            #                stderr=subprocess.DEVNULL)
+            
+        except Exception as e:
+            print(f"Error al reiniciar el servicio web: {e}")
+        
+        return redirect('dash_board')
+    else:
+        return redirect('accounts/login/')
+
+def reboot_system(request):
+    if request.user.is_authenticated:
+        message = '{"comando":"rebootSystem"}'
+        topic='Dispositivos/rebootSystem/command'
+        mqtt.client.publish(topic,message)
+        time.sleep(1)
+        return render(request, 'excedentes/reboot_system.html', {})
+    else:
+        return redirect('accounts/login/')
+    
+def rebooting_now(request):
+    if request.user.is_authenticated:
+        try:
+            # Opción 1: Usando subprocess (más seguro y controlado)
+            subprocess.Popen(['sudo', 'reboot'], 
+                           stdout=subprocess.DEVNULL, 
+                           stderr=subprocess.DEVNULL)
+            
+            # Opción 2: Usando os.system (alternativa)
+            # os.system('sudo reboot')
+            
+            # Opción 3: Para reinicio con delay (recomendado)
+            # subprocess.Popen(['sudo', 'shutdown', '-r', '+1'], 
+            #                stdout=subprocess.DEVNULL, 
+            #                stderr=subprocess.DEVNULL)
+            
+        except Exception as e:
+            print(f"Error al reiniciar el sistema: {e}")
+        
+        return render(request, 'excedentes/rebooting_now.html', {})
     else:
         return redirect('accounts/login/')
