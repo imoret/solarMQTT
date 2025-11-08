@@ -1,0 +1,87 @@
+{% extends 'excedentes/base.html' %}
+
+{% block head %}
+<style>
+    body {
+        background-color: #2c3e50;
+    }
+    .rebooting-content {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 70vh;
+    }
+    .reboot-container {
+        text-align: center;
+        padding: 3rem;
+        border-radius: 10px;
+        background-color: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        max-width: 600px;
+        width: 90%;
+        color: white;
+    }
+    .reboot-container h1 {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        color: #ecf0f1;
+    }
+    .spinner {
+        border: 8px solid rgba(255, 255, 255, 0.3);
+        border-top: 8px solid #3498db;
+        border-radius: 50%;
+        width: 80px;
+        height: 80px;
+        animation: spin 1s linear infinite;
+        margin: 2rem auto;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .reboot-message {
+        font-size: 1.3rem;
+        margin: 1.5rem 0;
+        color: #bdc3c7;
+    }
+    .reboot-warning {
+        font-size: 1rem;
+        color: #e74c3c;
+        margin-top: 2rem;
+        padding: 1rem;
+        background-color: rgba(231, 76, 60, 0.1);
+        border-radius: 5px;
+        border: 1px solid rgba(231, 76, 60, 0.3);
+    }
+    .reboot-info {
+        font-size: 0.9rem;
+        color: #95a5a6;
+        margin-top: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="rebooting-content">
+    <div class="reboot-container">
+        <h1>🔄 Reiniciando Sistema</h1>
+        <div class="spinner"></div>
+        <div class="reboot-message">El sistema se está reiniciando...</div>
+        <div class="reboot-message">Por favor, espere unos momentos.</div>
+        <div class="reboot-warning">
+            ⚠️ No cierre esta ventana ni apague el equipo
+        </div>
+        <div class="reboot-info">
+            El sistema estará disponible nuevamente en aproximadamente 1-2 minutos.
+        </div>
+    </div>
+</div>
+
+    <script>
+        // Intentar reconectar después de 60 segundos
+        setTimeout(function() {
+            // Intentar recargar la página principal
+            window.location.href = "/";
+        }, 60000); // 60 segundos
+    </script>
+{% endblock %}
