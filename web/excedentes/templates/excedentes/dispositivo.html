@@ -1,11 +1,10 @@
 {% extends 'excedentes/base.html' %}
 
 {% block content %}
-
 <section class="container-md">
     <div class="row mb-4">
         <div class="col-12 text-center">
-            <h1 class="display-4 fw-bold text-primary">{{ dispositivo.nombre }} </h1>
+            <h1 class="display-4 fw-bold text-primary">{{ dispositivo.nombre }}</h1>
             <hr class="w-50 mx-auto">
         </div>
     </div>
@@ -55,13 +54,13 @@
                 <h5 class="mt-4 mb-3">Modos por Día</h5>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <div class="mb-3">
                         {% for day, modo in modos_actuales.items %}
+        
                         <div class="mb-3">
                             <label for="modo{{ day }}" class="form-label">{{ day }} ->{{ modo }} <-</label>
                             <select class="form-select" id="modo{{ day }}" name="modo{{ day }}">
                                 {% for mode in modos %}
-                                <option value="{{ mode }}" {% if modo == mode.nombre %}selected{% endif %}>
+                                <option value="{{ mode }}" {% if modo == mode %}selected{% endif %}>
                                     {{ mode|title }}
                                 </option>
                                 {% endfor %}

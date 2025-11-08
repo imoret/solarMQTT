@@ -13,7 +13,11 @@ import os
 def dash_board(request):
     if request.user.is_authenticated:
         dispositivos = Dispositivos.objects.all()
-        return render(request, 'excedentes/dash_board.html', {'dispositivos':dispositivos})
+        return render(request, 'excedentes/dash_board.html', {
+            'dispositivos': dispositivos,
+            'horas_range': range(25),
+            'minutos_range': range(60)
+        })
     else:
         return redirect('accounts/login/')
 
@@ -85,9 +89,9 @@ def get_data(request):
     else:
         return redirect('accounts/login/')
     
-def setManual(request, nombre_dispositivo, onOff):
+def setManual(request, nombre_dispositivo, onOff, horas=0, minutos=0):
     if request.user.is_authenticated:
-        mensaje = '{"comando":"setManual", "dispositivo":"%s", "value":"%s"}' %(nombre_dispositivo, onOff)
+        mensaje = '{"comando":"setManual", "dispositivo":"%s", "value":"%s", "horas":%s, "minutos":%s}' %(nombre_dispositivo, onOff, horas, minutos)
         topic='Dispositivos/%s/command'%nombre_dispositivo
         mqtt.client.publish(topic,mensaje)
         time.sleep(1)

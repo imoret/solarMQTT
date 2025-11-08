@@ -63,7 +63,9 @@
       }
 
       function setManual(nm, cb){
-        url='/setManual/'+nm+'/'+cb.checked+'/'
+        let horas = document.getElementById('horas_manual_'+nm).value;
+        let minutos = document.getElementById('minutos_manual_'+nm).value;
+        url='/setManual/'+nm+'/'+cb.checked+'/'+horas+'/'+minutos+'/'
         conecta(url);
       }
 
@@ -225,6 +227,26 @@
                   <input class="form-check-input" type="checkbox" role="switch" id="boton_manual_{{d.nombre}}" onclick="setManual('{{d.nombre}}', this)">
                   <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">Manual</label>
                 {% endif %}
+              </div>
+              
+              <div class="align-self-center mt-2">
+                <label class="form-label" style="font-size: 0.9rem;">Duración modo manual:</label>
+                <div class="d-flex gap-2 align-items-center">
+                  <div>
+                    <select class="form-select form-select-sm" id="horas_manual_{{d.nombre}}" style="width: 70px;">
+                      {% for h in horas_range %}
+                        <option value="{{ h }}">{{ h }}h</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div>
+                    <select class="form-select form-select-sm" id="minutos_manual_{{d.nombre}}" style="width: 70px;">
+                      {% for m in minutos_range %}
+                        <option value="{{ m }}">{{ m }}m</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
               </div>
               
               <div class="form-check form-switch align-self-center">
