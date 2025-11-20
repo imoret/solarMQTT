@@ -103,7 +103,6 @@ class lcd:
     def parada_emergencia(self):
         self.lcd.backlight_enabled = True
         self.lcdLuz=True
-        self.lcd.clear()
         self.lcd.cursor_pos = (1,5)
         self.lcd.write_string("PARADA  DE")
         self.lcd.cursor_pos = (2,5)
