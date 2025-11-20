@@ -204,11 +204,23 @@ class instalacion:
     def thread_lcd(self):
         while not kill_threads:
             try:
-                time.sleep(0.5)
-                self.lcd.muestraProduccion(trunc(self.produccion),trunc(self.excedente))
-                time.sleep(0.5)
-                self.lcd.muestraProduccion(trunc(self.produccion),trunc(self.excedente))
-                self.lcd.muestra_dispositivos(self.dispositivos.values())
+                while self.lcd.parada:
+                    self.lcd.parada_emergencia()
+                    time.sleep(1)
+                else:
+                    self.lcd.clear()
+                    for i in range(1, self.lcd.espera+1):
+                        self.lcd.writeLine("PARADA DE EMERGENCIA", 0)
+                        self.lcd.writeLine("Reactivacion en ", 1)
+                        self.lcd.writeLine("     %s segundos" % str(self.lcd.espera+1-i), 2)
+                        time.sleep(1)
+                    self.lcd.clear()
+                if not self.lcd.parada:
+                    time.sleep(0.5)
+                    self.lcd.muestraProduccion(trunc(self.produccion),trunc(self.excedente))
+                    time.sleep(0.5)
+                    self.lcd.muestraProduccion(trunc(self.produccion),trunc(self.excedente))
+                    self.lcd.muestra_dispositivos(self.dispositivos.values())
             except Exception as e:
                 self.logger.error("Error en el hilo LCD: %s" % e)
                 time.sleep(5)
@@ -513,23 +525,20 @@ class instalacion:
     def paradaEmergencia(self, logText = "PARADA DE EMERGENCIA Superado maximo KWs permitidos ", espera=60):
         self.logger.warning(str(logText)+" "+str(int(self.excedente))+" de "+str(int(self.maxRed)))
         estadoAnterior = {}
-        while True:	#do while bucl+         
+        while True:	#do while bucl+   
+            if self.lcd:
+                self.lcd.parada=True
+                slef.lcd.espera=espera  
             for d in self.dispositivos.values():
                 d.emergencia = True
                 if d.modoManual:
                     estadoAnterior[d.nombre] = d.powerAct
-                d.setPower(0)
-            if self.lcd:
-                self.lcd.parada_emergencia()               
+                d.setPower(0)                     
             time.sleep(10)		
             if self.excedente < self.maxRed: #¢ondicion de salida
                 break
-				
-        for i in range(1, espera+1):
-            self.lcd.writeLine("PARADA DE EMERGENCIA", 0)
-            self.lcd.writeLine("Reactivacion en ", 1)
-            self.lcd.writeLine("     %s segundos" % str(espera+1-i), 2)
-            time.sleep(1)
+        self.lcd.parada=False
+        time.sleep(espera)
         for d in self.dispositivos.values():
             d.emergencia = False
             if d.modoManual:
