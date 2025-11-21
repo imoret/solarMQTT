@@ -526,7 +526,7 @@ class instalacion:
         while True:	#do while bucl+   
             if self.lcd:
                 self.lcd.parada=True
-                slef.lcd.espera=espera  
+                self.lcd.espera=espera  
             for d in self.dispositivos.values():
                 d.emergencia = True
                 if d.modoManual:
