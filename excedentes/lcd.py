@@ -22,6 +22,7 @@ class lcd:
         self.longitud = lon
         self.semaforoLCD = threading.Semaphore(1)	#Semaforo
         self.parada = False
+        self.espera = 0
 
         try:
             self.lcd = i2c.CharLCD(i2c_expander, address, port=port, charmap=charmap,cols=self.cols, rows=self.rows)
