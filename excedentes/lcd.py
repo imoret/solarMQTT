@@ -108,3 +108,11 @@ class lcd:
         self.lcd.write_string("PARADA  DE")
         self.lcd.cursor_pos = (2,5)
         self.lcd.write_string("EMERGENCIA")
+
+    def limpia(self):
+        for r in range(0,self.rows):
+            linea = ""
+            for c in range(0,self.cols):
+                linea += " "
+            self.lcd.cursor_pos(r,0)
+            self.lcd.write_string(linea)

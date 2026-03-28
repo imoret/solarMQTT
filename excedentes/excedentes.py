@@ -205,14 +205,17 @@ class instalacion:
         while not kill_threads:
             try:
                 while self.lcd.parada:
+                    self.lcd.limpia()
                     self.lcd.parada_emergencia()
                     time.sleep(1)
+                    self.lcd.limpia()
                 else:
                     for i in range(1, self.lcd.espera+1):
                         self.lcd.writeLine("PARADA DE EMERGENCIA", 0)
                         self.lcd.writeLine("Reactivacion en ", 1)
                         self.lcd.writeLine("     %s segundos" % str(self.lcd.espera+1-i), 2)
                         time.sleep(1)
+                        self.lcd.limpia()
                 if not self.lcd.parada:
                     time.sleep(0.5)
                     self.lcd.muestraProduccion(trunc(self.produccion),trunc(self.excedente))
