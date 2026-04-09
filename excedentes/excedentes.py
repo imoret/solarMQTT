@@ -31,6 +31,10 @@ class instalacion:
         self.historico_5min = []
         self.historico = []
         
+        self.precios_compra = []
+        self.precios_venta = []
+        self.zona_geografica = 'Baleares'
+        
 		#Creo el logger de la instalacion
         self.logger = logging.getLogger('instalacion')
         self.logger.setLevel(logging.DEBUG)
@@ -137,6 +141,51 @@ class instalacion:
         time.sleep(5)
         for a in self.arduinos.values():
             a.reset()
+
+        #Descarga inicial de precios
+        try:
+            self.descargar_precios()
+        except Exception as e:
+            self.logger.error("Error en descarga inicial de precios: %s" % e)
+
+        #Hilo para descarga diaria
+        self.daily_download_thread = threading.Thread(target=self.daily_download)
+        self.daily_download_thread.daemon = True
+        self.daily_download_thread.start()
+
+    def descargar_precios(self):
+        from precio_excedente_energia import download_and_load_prices
+        result = download_and_load_prices(geoname=self.zona_geografica)
+        self.precios_venta = result['venta']: 
+        self.precios_compra = result['compra']
+        self.logger.info("Precios descargados: venta %d, compra %d" % (len(self.precios_venta), len(self.precios_compra)))
+
+    def daily_download(self):
+        import time
+        from datetime import datetime, timedelta
+        while not kill_threads:
+            now = datetime.now()
+            target = now.replace(hour=23, minute=30, second=0, microsecond=0)
+            if now >= target:
+                target += timedelta(days=1)
+            sleep_time = (target - now).total_seconds()
+            # Dormir en intervalos de 60 segundos para permitir interrupción
+            while sleep_time > 0 and not kill_threads:
+                time.sleep(min(60, sleep_time))
+                sleep_time -= 60
+            if kill_threads:
+                break
+            while not kill_threads:
+                try:
+                    self.descargar_precios()
+                    break  # éxito, salir del loop de reintentos
+                except Exception as e:
+                    self.logger.error("Error en descarga diaria: %s. Reintentando en 10 minutos." % e)
+                    # Dormir 10 minutos en intervalos de 60 segundos
+                    remaining = 600
+                    while remaining > 0 and not kill_threads:
+                        time.sleep(min(60, remaining))
+                        remaining -= 60
 
     def recibeComando(self, puerto, semaforoCom, arduino):		
         global kill_threads
@@ -442,11 +491,10 @@ class instalacion:
         
     def repartir(self):
         self.dispositivos = dict(sorted(self.dispositivos.items(), key=lambda dis: dis[1].get_tiempo_hoy(), reverse=(self.excedente < 0)))
-        #self.logger.debug("disp---")
-        #for d in self.dispositivos.values():
-        #    self.logger.debug('%s %2.f'%(d.nombre,d.get_tiempo_hoy()));
-        #self.logger.debug("---")
-        #i = 0
+        precio_venta_actual = self.precios_venta[datetime.now().hour] if len(self.precios_venta) > 0 else 0
+        todo_encendido = True
+        limit_inyect = 250
+        
         for d in self.dispositivos.values():
             if d.modoManual:
                 continue
@@ -456,10 +504,8 @@ class instalacion:
 			'''
             #self.logger.info("%s" % d.nombre)
 
-            #disponible = self.excedente - self.disponible_dispositivos(d.nombre) if d.powerAct == 0 else self.excedente
             disponible = self.excedente - self.disponible_dispositivos(d.nombre)
-            #self.logger.info("%s dipone de %s wh" % (d.nombre, disponible))
-            #i+=1
+
             t=int(time.time())
             th = (d.tiempoHoy - t + d.horaEncendido) if d.powerAct > 0 else d.tiempoHoy
             hora=datetime.now().hour
@@ -487,9 +533,11 @@ class instalacion:
                         #self.logger.info("6")
                     else:												#Si estoy consumiendo paro
                         E = 0
+                        todo_encendido = False      #Si un capacitativo no esta encendido, inyecto a red a ver si así llega la energia.
                         #self.logger.info("7")
 
                 if d.tipo == "resistivo":
+                    limit_inyect = d.minPower if d.minPower > limit_inyect else limit_inyect    #Los resistivos no bloquean la inyeccion. Establecen el límite.
                     if d.powerAct == 0 and disponible > -d.minPower:         #Evito que se encienda si no hay disponible minimo
                         E = 0
                     elif abs(disponible) > d.power*0.5:                       #Me sobra o consumo mas de un 50%
@@ -516,12 +564,24 @@ class instalacion:
             
             if E > 255 : E = 255
             if E < 0 : E = 0
+
+            if precio_venta_actual < 0 and todo_encendido:
+                for i in self.inversores:
+                    if not i.dynamic_injection_active:
+                        i.enable_dynamic_power_injection(limit_inyect)
+            else:
+                for i in self.inversores:
+                    if i.dynamic_injection_active:
+                        i.disable_dynamic_power_injection()
+
             if d.powerAct != E:
                 if d.setPower(E):              # Si ha habido cambios y se aceptan lo muestro en la LCD
                     #self.logger.info("Produccion %s, excendente %s - Dispositivo %s con disponible %s puesto a %s" %(self.produccion, self.excedente, d.nombre, disponible, E))
                     d.publica_actividad(self.mqtt_client)
                     time.sleep(d.tiempo_reaccion)
                     break
+
+                
             
     def paradaEmergencia(self, logText = "PARADA DE EMERGENCIA Superado maximo KWs permitidos ", espera=60):
         self.logger.warning(str(logText)+" "+str(int(self.excedente))+" de "+str(int(self.maxRed)))

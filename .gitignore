@@ -56,3 +56,6 @@ web/solarMQTT/__pycache__/wsgi.cpython-310.pyc
 /web/excedentes/migrations/__pycache__
 /web/variables.env
 web/excedentes_
+excedentes/downloads/export_PrecioDeLaEnergiaExcedentariaDelAutoconsumoParaElMecanismoDeCompensacionSimplificada(PVPC)_2026-04-09_23_24.json
+excedentes.log
+excedentes.log
