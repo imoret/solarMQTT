@@ -1,6 +1,8 @@
 import logging
 import requests
 import time
+import platform
+import os
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
@@ -8,7 +10,10 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
-from webdriver_manager.chrome import ChromeDriverManager
+try:
+    from webdriver_manager.chrome import ChromeDriverManager
+except ImportError:
+    ChromeDriverManager = None
 
 class fronius:	
 	def __init__(self, nombre, _ip, web_username="service", web_password="yourPassword!", web_headless=False, potencia_instalada=4800):
@@ -38,6 +43,7 @@ class fronius:
 		self.logger.addHandler(fhd)
 
 		# Estado de la inyección dinámica
+		self.is_raspberry_pi = self._detect_raspberry_pi()
 		self.disable_dynamic_power_reduccion()  # Intentamos desactivar la inyeccion dinamica al iniciar para asegurar estado conocido
 		self.dynamic_injection_active = False
 
@@ -93,6 +99,50 @@ class fronius:
 		self.update()
 		return(self.produccion,self.excedente,self.autoconsumo,self.consumo)
 
+	def _detect_raspberry_pi(self):
+		"""Detecta si el código se está ejecutando en una Raspberry Pi"""
+		try:
+			return platform.machine().startswith('arm') and os.path.exists('/proc/device-tree/model')
+		except:
+			return False
+
+	def _get_chrome_driver(self):
+		"""Configura y retorna el driver de Chrome apropiado para la plataforma"""
+		chrome_options = Options()
+		
+		if self.is_raspberry_pi:
+			# Configuración específica para Raspberry Pi
+			chrome_options.binary_location = "/usr/bin/chromium-browser"
+			chrome_options.add_argument("--headless")
+			chrome_options.add_argument("--no-sandbox")
+			chrome_options.add_argument("--disable-dev-shm-usage")
+			chrome_options.add_argument("--disable-gpu")
+			chrome_options.add_argument("--disable-extensions")
+			chrome_options.add_argument("--disable-web-security")
+			chrome_options.add_argument("--memory-pressure-off")
+			chrome_options.add_argument("--max_old_space_size=256")
+			chrome_options.add_argument("--single-process")
+			
+			try:
+				driver = webdriver.Chrome(options=chrome_options)
+			except Exception as e:
+				self.logger.error(f"Error iniciando Chromium en RPi: {e}")
+				chrome_options.add_argument("--remote-debugging-port=9222")
+				driver = webdriver.Chrome(options=chrome_options)
+		else:
+			# Configuración para PC normal
+			if self.web_headless:
+				chrome_options.add_argument("--headless")
+			chrome_options.add_argument("--no-sandbox")
+			chrome_options.add_argument("--disable-dev-shm-usage")
+			
+			if ChromeDriverManager:
+				driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+			else:
+				driver = webdriver.Chrome(options=chrome_options)
+		
+		return driver
+
 	def disable_dynamic_power_injection(self):
 		"""
 		Desactiva la reducción dinámica de potencia (EVU) en el inversor Fronius.
@@ -102,15 +152,8 @@ class fronius:
 			bool: True si se desactivó correctamente, False si hubo error
 		"""
 		try:
-			# Configurar opciones de Chrome
-			chrome_options = Options()
-			if self.web_headless:
-				chrome_options.add_argument("--headless")
-			chrome_options.add_argument("--no-sandbox")
-			chrome_options.add_argument("--disable-dev-shm-usage")
-
-			# Inicializar driver
-			driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+			# Inicializar driver con configuración automática
+			driver = self._get_chrome_driver()
 			wait = WebDriverWait(driver, 20)
 
 			def wait_until_clickable(locator):
@@ -191,15 +234,8 @@ class fronius:
 			bool: True si se activó correctamente, False si hubo error
 		"""
 		try:
-			# Configurar opciones de Chrome
-			chrome_options = Options()
-			if self.web_headless:
-				chrome_options.add_argument("--headless")
-			chrome_options.add_argument("--no-sandbox")
-			chrome_options.add_argument("--disable-dev-shm-usage")
-
-			# Inicializar driver
-			driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+			# Inicializar driver con configuración automática
+			driver = self._get_chrome_driver()
 			wait = WebDriverWait(driver, 20)
 
 			def wait_until_clickable(locator):

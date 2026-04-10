@@ -10,13 +10,80 @@ import traceback
 import json
 import tempfile
 import shutil
+import platform
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
+try:
+    from webdriver_manager.chrome import ChromeDriverManager
+except ImportError:
+    ChromeDriverManager = None
+
+
+def _detect_raspberry_pi():
+    """Detecta si el código se está ejecutando en una Raspberry Pi"""
+    try:
+        return platform.machine().startswith('arm') and os.path.exists('/proc/device-tree/model')
+    except:
+        return False
+
+
+def _get_chrome_driver(download_dir=None, headless=False):
+    """Configura y retorna el driver de Chrome apropiado para la plataforma"""
+    is_rpi = _detect_raspberry_pi()
+    options = Options()
+    
+    if is_rpi:
+        # Configuración específica para Raspberry Pi
+        options.binary_location = "/usr/bin/chromium-browser"
+        options.add_argument("--headless")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--disable-extensions")
+        options.add_argument("--disable-web-security")
+        options.add_argument("--memory-pressure-off")
+        options.add_argument("--max_old_space_size=256")
+        options.add_argument("--single-process")
+    else:
+        # Configuración para PC normal
+        if headless:
+            options.add_argument('--headless=new')
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--disable-gpu')
+        options.add_argument('--window-size=1920,1080')
+    
+    # Configuración de descarga
+    prefs = {
+        'download.default_directory': download_dir or '/tmp',
+        'download.prompt_for_download': False,
+        'download.directory_upgrade': True,
+        'safebrowsing.enabled': True,
+        'profile.default_content_settings.popups': 0,
+    }
+    options.add_experimental_option('prefs', prefs)
+    
+    try:
+        if is_rpi:
+            driver = webdriver.Chrome(options=options)
+        else:
+            if ChromeDriverManager:
+                driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+            else:
+                driver = webdriver.Chrome(options=options)
+    except Exception as e:
+        print(f"Error iniciando Chrome: {e}")
+        if is_rpi:
+            options.add_argument("--remote-debugging-port=9222")
+            driver = webdriver.Chrome(options=options)
+        else:
+            raise
+    
+    return driver
 
 
 def download_esios_price_json(url, download_dir=None, headless=False, label=None):
@@ -24,23 +91,7 @@ def download_esios_price_json(url, download_dir=None, headless=False, label=None
         download_dir = os.path.join(os.path.dirname(__file__), 'downloads')
     os.makedirs(download_dir, exist_ok=True)
 
-    options = Options()
-    if headless:
-        options.add_argument('--headless=new')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--disable-gpu')
-    options.add_argument('--window-size=1920,1080')
-    prefs = {
-        'download.default_directory': download_dir,
-        'download.prompt_for_download': False,
-        'download.directory_upgrade': True,
-        'safebrowsing.enabled': True,
-        'profile.default_content_settings.popups': 0,
-    }
-    options.add_experimental_option('prefs', prefs)
-
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    driver = _get_chrome_driver(download_dir=download_dir, headless=headless)
     try:
         if headless:
             driver.execute_cdp_cmd('Page.setDownloadBehavior', {
