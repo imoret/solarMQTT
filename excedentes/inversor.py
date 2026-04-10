@@ -66,6 +66,10 @@ class fronius:
 				except:
 					self.logger.error("Error al convertir JSON")
 				else:
+					if self.dynamic_injection_active and self.Json["Body"]["Data"]["Site"]["P_Grid"] > 0:
+						exito = False
+						intento += 1
+						time.sleep(3)
 					self.produccion=self.Json["Body"]["Data"]["Inverters"]["1"]["P"]
 					self.excedente=self.Json["Body"]["Data"]["Site"]["P_Grid"]
 					self.autoconsumo=self.produccion if self.excedente > 0 else self.produccion + self.excedente
