@@ -156,7 +156,7 @@ class instalacion:
     def descargar_precios(self):
         from precio_excedente_energia import download_and_load_prices
         result = download_and_load_prices(geoname=self.zona_geografica)
-        self.precios_venta = result['venta']: 
+        self.precios_venta = result['venta'] 
         self.precios_compra = result['compra']
         self.logger.info("Precios descargados: venta %d, compra %d" % (len(self.precios_venta), len(self.precios_compra)))
 
@@ -566,11 +566,11 @@ class instalacion:
             if E < 0 : E = 0
 
             if precio_venta_actual < 0 and todo_encendido:
-                for i in self.inversores:
+                for i in self.inversores.values():
                     if not i.dynamic_injection_active:
                         i.enable_dynamic_power_injection(limit_inyect)
             else:
-                for i in self.inversores:
+                for i in self.inversores.values():
                     if i.dynamic_injection_active:
                         i.disable_dynamic_power_injection()
 

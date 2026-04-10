@@ -44,7 +44,7 @@ class fronius:
 
 		# Estado de la inyección dinámica
 		self.is_raspberry_pi = self._detect_raspberry_pi()
-		self.disable_dynamic_power_reduccion()  # Intentamos desactivar la inyeccion dinamica al iniciar para asegurar estado conocido
+		self.disable_dynamic_power_injection()  # Intentamos desactivar la inyeccion dinamica al iniciar para asegurar estado conocido
 		self.dynamic_injection_active = False
 
 	def update(self):
@@ -102,7 +102,8 @@ class fronius:
 	def _detect_raspberry_pi(self):
 		"""Detecta si el código se está ejecutando en una Raspberry Pi"""
 		try:
-			return platform.machine().startswith('arm') and os.path.exists('/proc/device-tree/model')
+			machine = platform.machine()
+			return machine.startswith('arm') and os.path.exists('/proc/device-tree/model')
 		except:
 			return False
 
@@ -124,10 +125,15 @@ class fronius:
 			chrome_options.add_argument("--single-process")
 			
 			try:
-				driver = webdriver.Chrome(options=chrome_options)
+				driver = webdriver.Chrome(options=chrome_options, command_executor=None)
 			except Exception as e:
 				self.logger.error(f"Error iniciando Chromium en RPi: {e}")
-				chrome_options.add_argument("--remote-debugging-port=9222")
+				# Intentar con configuración mínima
+				chrome_options = Options()
+				chrome_options.binary_location = "/usr/bin/chromium-browser"
+				chrome_options.add_argument("--headless")
+				chrome_options.add_argument("--no-sandbox")
+				chrome_options.add_argument("--disable-dev-shm-usage")
 				driver = webdriver.Chrome(options=chrome_options)
 		else:
 			# Configuración para PC normal
@@ -136,9 +142,13 @@ class fronius:
 			chrome_options.add_argument("--no-sandbox")
 			chrome_options.add_argument("--disable-dev-shm-usage")
 			
-			if ChromeDriverManager:
-				driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
-			else:
+			try:
+				if ChromeDriverManager:
+					driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+				else:
+					driver = webdriver.Chrome(options=chrome_options)
+			except Exception:
+				# Fallback sin Service
 				driver = webdriver.Chrome(options=chrome_options)
 		
 		return driver

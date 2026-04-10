@@ -26,7 +26,8 @@ except ImportError:
 def _detect_raspberry_pi():
     """Detecta si el código se está ejecutando en una Raspberry Pi"""
     try:
-        return platform.machine().startswith('arm') and os.path.exists('/proc/device-tree/model')
+        machine = platform.machine()
+        return machine.startswith('arm') and os.path.exists('/proc/device-tree/model')
     except:
         return False
 
@@ -93,7 +94,9 @@ def download_esios_price_json(url, download_dir=None, headless=False, label=None
 
     driver = _get_chrome_driver(download_dir=download_dir, headless=headless)
     try:
-        if headless:
+        # Configurar comportamiento de descarga para RPi
+        is_rpi = _detect_raspberry_pi()
+        if headless or is_rpi:
             driver.execute_cdp_cmd('Page.setDownloadBehavior', {
                 'behavior': 'allow',
                 'downloadPath': download_dir,
@@ -150,18 +153,31 @@ def download_esios_price_json(url, download_dir=None, headless=False, label=None
                 if downloaded_file:
                     break
 
+        if downloaded_file is None:
+            # Búsqueda extendida para RPi
+            print('Buscando archivos JSON descargados...')
+            for _ in range(10):  # 10 intentos más
+                time.sleep(2)
+                for name in os.listdir(download_dir):
+                    if name.lower().endswith('.json'):
+                        downloaded_file = os.path.join(download_dir, name)
+                        print(f'Archivo encontrado en búsqueda extendida: {downloaded_file}')
+                        break
+                if downloaded_file:
+                    break
+
         if downloaded_file:
             if label:
                 base_name = os.path.basename(downloaded_file)
                 labeled_name = f"{label}_{base_name}"
                 labeled_path = os.path.join(download_dir, labeled_name)
                 if not os.path.exists(labeled_path):
-                    os.rename(downloaded_file, labeled_path)
+                    os.rename(downloaded_file, labeled_name)
                     downloaded_file = labeled_path
             print(f'Descarga completada: {downloaded_file}')
             return downloaded_file
 
-        raise RuntimeError('No se detectó ningún archivo JSON descargado en el directorio.')
+        raise RuntimeError(f'No se detectó ningún archivo JSON descargado en {download_dir}.')
 
     except Exception:
         print(f'Error durante la descarga de ESIOS para {url}:')
