@@ -165,7 +165,7 @@ class instalacion:
         from datetime import datetime, timedelta
         while not kill_threads:
             now = datetime.now()
-            target = now.replace(hour=23, minute=30, second=0, microsecond=0)
+            target = now.replace(hour=0, minute=10, second=0, microsecond=0)
             if now >= target:
                 target += timedelta(days=1)
             sleep_time = (target - now).total_seconds()

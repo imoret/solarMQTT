@@ -46,6 +46,7 @@ class fronius:
 		self.is_raspberry_pi = self._detect_raspberry_pi()
 		self.disable_dynamic_power_injection()  # Intentamos desactivar la inyeccion dinamica al iniciar para asegurar estado conocido
 		self.dynamic_injection_active = False
+		self.previous_excedente = 0  # Para detectar cambios en el excedente
 
 	def update(self):
 		intento = 1
@@ -73,10 +74,33 @@ class fronius:
 					#self.produccion = 2600
 					#self.excedente = 2591
 					#self.logger.info("Produccion: %s excedente: %s" %(self.produccion, self.excedente))
+					
+					# Lógica de estabilización para inyección 0
+					if self.dynamic_injection_active and self.excedente >0 and self.previous_excedente < 0:
+						# Inyección activada y consumiendo de red en esta lectura
+						# Esperar y releer para dar tiempo al inversor a reaccionar
+						self.logger.info(f"Detección de inyección 0 estable - excedente actual: {self.excedente}W, anterior: {self.previous_excedente}W")
+						time.sleep(1)  # Esperar 1 segundo para que el inversor reaccione
+						
+						# Releer datos del inversor
+						try:
+							self.request = requests.get(self.url, timeout=10)
+							new_json = self.request.json()
+							self.produccion = new_json["Body"]["Data"]["Inverters"]["1"]["P"]
+							self.excedente = new_json["Body"]["Data"]["Site"]["P_Grid"]
+							self.autoconsumo = self.produccion if self.excedente > 0 else self.produccion + self.excedente
+							self.consumo = self.produccion + self.excedente if self.excedente > 0 else self.produccion + self.excedente
+							self.logger.info(f"Relectura tras estabilización - nuevo excedente: {self.excedente}W")
+						except Exception as e:
+							self.logger.error(f"Error en relectura tras estabilización: {e}")
+					
+					# Guardar excedente actual para la siguiente iteración
+					self.previous_excedente = self.excedente
 		
 		if (intento >= 3 and not self.online):
 			self.logger.error("Inversor fuera de servicio o inalcanzable")
 			self.online = False
+			self.previous_excedente = 0  # Resetear valor anterior cuando el inversor está offline
 			
 			#self.excedente=-3000
 			#self.excedente=-500
@@ -219,6 +243,7 @@ class fronius:
 
 			self.logger.info("Reducción dinámica de potencia desactivada correctamente")
 			self.dynamic_injection_active = False
+			self.previous_excedente = 0  # Resetear para evitar detecciones falsas tras cambio de estado
 			driver.quit()
 			return True
 
@@ -319,6 +344,7 @@ class fronius:
 
 			self.logger.info("Inyección dinámica de potencia activada correctamente")
 			self.dynamic_injection_active = True
+			self.previous_excedente = 0  # Resetear para evitar detecciones falsas tras cambio de estado
 			driver.quit()
 			return True
 
