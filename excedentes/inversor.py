@@ -16,7 +16,7 @@ except ImportError:
     ChromeDriverManager = None
 
 class fronius:	
-	def __init__(self, nombre, _ip, web_username="service", web_password="yourPassword!", web_headless=False, potencia_instalada=4800):
+	def __init__(self, nombre, _ip, web_username="service", web_password="Enersolma1234!", web_headless=False, potencia_instalada=4800):
 		self.excedente=0
 		self.produccion=0
 		self.autoconsumo=0
@@ -46,7 +46,6 @@ class fronius:
 		self.is_raspberry_pi = self._detect_raspberry_pi()
 		self.disable_dynamic_power_injection()  # Intentamos desactivar la inyeccion dinamica al iniciar para asegurar estado conocido
 		self.dynamic_injection_active = False
-		self.previous_excedente = 0  # Para detectar cambios en el excedente
 
 	def update(self):
 		intento = 1
@@ -67,10 +66,6 @@ class fronius:
 				except:
 					self.logger.error("Error al convertir JSON")
 				else:
-					if self.dynamic_injection_active and self.Json["Body"]["Data"]["Site"]["P_Grid"] > 0:
-						exito = False
-						intento += 1
-						time.sleep(3)
 					self.produccion=self.Json["Body"]["Data"]["Inverters"]["1"]["P"]
 					self.excedente=self.Json["Body"]["Data"]["Site"]["P_Grid"]
 					self.autoconsumo=self.produccion if self.excedente > 0 else self.produccion + self.excedente
@@ -78,33 +73,10 @@ class fronius:
 					#self.produccion = 2600
 					#self.excedente = 2591
 					#self.logger.info("Produccion: %s excedente: %s" %(self.produccion, self.excedente))
-					
-					# Lógica de estabilización para inyección 0
-					if self.dynamic_injection_active and self.excedente >0 and self.previous_excedente < 0:
-						# Inyección activada y consumiendo de red en esta lectura
-						# Esperar y releer para dar tiempo al inversor a reaccionar
-						self.logger.info(f"Detección de inyección 0 estable - excedente actual: {self.excedente}W, anterior: {self.previous_excedente}W")
-						time.sleep(1)  # Esperar 1 segundo para que el inversor reaccione
-						
-						# Releer datos del inversor
-						try:
-							self.request = requests.get(self.url, timeout=10)
-							new_json = self.request.json()
-							self.produccion = new_json["Body"]["Data"]["Inverters"]["1"]["P"]
-							self.excedente = new_json["Body"]["Data"]["Site"]["P_Grid"]
-							self.autoconsumo = self.produccion if self.excedente > 0 else self.produccion + self.excedente
-							self.consumo = self.produccion + self.excedente if self.excedente > 0 else self.produccion + self.excedente
-							self.logger.info(f"Relectura tras estabilización - nuevo excedente: {self.excedente}W")
-						except Exception as e:
-							self.logger.error(f"Error en relectura tras estabilización: {e}")
-					
-					# Guardar excedente actual para la siguiente iteración
-					self.previous_excedente = self.excedente
 		
 		if (intento >= 3 and not self.online):
 			self.logger.error("Inversor fuera de servicio o inalcanzable")
 			self.online = False
-			self.previous_excedente = 0  # Resetear valor anterior cuando el inversor está offline
 			
 			#self.excedente=-3000
 			#self.excedente=-500
@@ -153,7 +125,7 @@ class fronius:
 			chrome_options.add_argument("--single-process")
 			
 			try:
-				driver = webdriver.Chrome(options=chrome_options, command_executor=None)
+				driver = webdriver.Chrome(options=chrome_options)
 			except Exception as e:
 				self.logger.error(f"Error iniciando Chromium en RPi: {e}")
 				# Intentar con configuración mínima
@@ -227,7 +199,7 @@ class fronius:
 				driver.quit()
 				return False
 
-			self.logger.info("Login exitoso, configurando reducción dinámica de potencia")
+			self.logger.info("Login exitoso, desactivando inyección dinámica de potencia")
 
 			# Navegar a configuración
 			evu_link = wait_until_clickable((By.CSS_SELECTOR, "a[ui-sref='settings.evu'], a[href*='#/settings/evu']"))
@@ -245,7 +217,7 @@ class fronius:
 			driver.execute_script("arguments[0].click();", save_button)
 			time.sleep(3)
 
-			self.logger.info("Reducción dinámica de potencia desactivada correctamente")
+			self.logger.info("Inyección dinámica de potencia desactivada correctamente")
 			self.dynamic_injection_active = False
 			self.previous_excedente = 0  # Resetear para evitar detecciones falsas tras cambio de estado
 			driver.quit()

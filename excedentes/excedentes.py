@@ -155,7 +155,10 @@ class instalacion:
 
     def descargar_precios(self):
         from precio_excedente_energia import download_and_load_prices
-        result = download_and_load_prices(geoname=self.zona_geografica)
+        import os
+        # Usar directorio persistente para evitar problemas con archivos temporales
+        download_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'temp_downloads'))
+        result = download_and_load_prices(download_dir=download_dir, geoname=self.zona_geografica)
         self.precios_venta = result['venta'] 
         self.precios_compra = result['compra']
         self.logger.info("Precios descargados: venta %d, compra %d" % (len(self.precios_venta), len(self.precios_compra)))
@@ -493,8 +496,68 @@ class instalacion:
         self.dispositivos = dict(sorted(self.dispositivos.items(), key=lambda dis: dis[1].get_tiempo_hoy(), reverse=(self.excedente < 0)))
         precio_venta_actual = self.precios_venta[datetime.now().hour] if len(self.precios_venta) > 0 else 0
         todo_encendido = True
-        limit_inyect = 250
+        limit_inject = 250
         
+        ''' Si el precio de venta es negativo y todos los capacitativos estan encendidos
+            activo el modo de inyeccion 0 '''
+        if precio_venta_actual <= 0:
+            todo_encendido = True
+            for d in self.dispositivos.values():
+                if d.modoManual:
+                    continue
+                hora = datetime.now().hour
+                if hora in d.horasOff:
+                    continue
+                if (d.tiempoMaximo != 0) and (d.get_tiempo_hoy() < -d.tiempoMaximo):
+                    continue
+                if(d.consumExcedente) or (d.tiempoHoy > 0):
+                    if d.tipo == "capacitativo":
+                        if d.powerAct <= 0:
+                            todo_encendido = False
+                            #self.logger.debug(str(d.nombre)+" dice que esta apagado")
+                            break
+
+            if todo_encendido:
+                for i in self.inversores.values():
+                        if not i.dynamic_injection_active:
+                            limit_inyect = max(d.minPower for d in self.dispositivos.values() if d.tipo == "resistivo")
+                            self.logger.info("Todos los dipositivos encendidos, precio de venta negativo. Limitando inyección a %sW" % limit_inyect)
+                            i.enable_dynamic_power_injection(soft_limit_power=limit_inject)
+            elif all([i.dynamic_injection_active for i in self.inversores.values()]):
+                ''' Si no está todo encendido, pero los inversores estan en modo inyeccion 0
+                    Algún dispositivo ha cambiado de estado. Desactivaré la inyección 0'''
+                for i in self.inversores.values():
+                    if i.dynamic_injection_active:
+                        self.logger.info("Algún dispositivo está desactivado y solicita energia. Desactivando inyección dinamica")
+                        i.disable_dynamic_power_injection()
+                            
+        ''' Si el precio de venta es positivo desactivo la inyección 0 '''
+        if precio_venta_actual > 0:
+            for i in self.inversores.values():
+                if i.dynamic_injection_active:
+                    self.logger.info("Precio de venta positivo. Desactivando inyección dinamica")
+                    i.disable_dynamic_power_injection()
+        
+        ''' Si todos los inversores estan en modo inyeccion 0 y estoy consumiedo energia
+            comprovaré el excedente durante un minuto para dar tiempo al inversor a reacionar
+            Si pasado el minuto sigo consumiendo desactivo la inyeccion 0 '''
+        if self.excedente > 0 and all([i.dynamic_injection_active for i in self.inversores.values()]):
+            #self.logger.info("Se ha detectado consumo, se desactivará la inyección dinamica en 1 minuto")
+            desactivar_inyeccion = True
+            timeout = time.time() + 60
+            while time.time() < timeout:
+                if self.excedente < 0:
+                    desactivar_inyeccion = False 
+                    #self.logger.info("Desactivación cancelada")
+                    break
+                time.sleep(0.5)
+            if desactivar_inyeccion:
+                for i in self.inversores.values():
+                    if i.dynamic_injection_active:
+                        self.logger.info("Se ha detectado consumo durante un minuto.Desactivando inyección dinamica")
+                        i.disable_dynamic_power_injection()
+        
+        '''Aquí enciendo/apago los dispositivos.'''
         for d in self.dispositivos.values():
             if d.modoManual:
                 continue
@@ -525,7 +588,9 @@ class instalacion:
                 #self.logger.info("4")
             elif (d.consumExcedente) or (d.tiempoHoy > 0):			#Si hay que consumir escedentes
                 if d.tipo == "capacitativo":
-                    if disponible <= -(d.power-(d.minPower/2)) :		#Si hay disponible suficiente enciendo 
+                    if all([i.dynamic_injection_active for i in self.inversores.values()]): # Si se ha activado la inyeccion dinamica no modifico en estado de los capacitativos
+                        E = d.powerAct                                                      # Esto evita que un cambio "tardio" del consumo apague el dispositico sin desactivar la inyección dinamica
+                    elif disponible <= -(d.power-(d.minPower/2)) :		#Si hay disponible suficiente enciendo 
                         E = 255
                         #self.logger.info("5")
                     elif (disponible <= d.minPower and d.powerAct > 0): #Si consumo por debajo del minimo y ya estoy encendido sigo encendido
@@ -537,7 +602,7 @@ class instalacion:
                         #self.logger.info("7")
 
                 if d.tipo == "resistivo":
-                    limit_inyect = d.minPower if d.minPower > limit_inyect else limit_inyect    #Los resistivos no bloquean la inyeccion. Establecen el límite.
+                    limit_inject = d.minPower if d.minPower > limit_inject else limit_inject    #Los resistivos no bloquean la inyeccion. Establecen el límite.
                     if d.powerAct == 0 and disponible > -d.minPower:         #Evito que se encienda si no hay disponible minimo
                         E = 0
                     elif abs(disponible) > d.power*0.5:                       #Me sobra o consumo mas de un 50%
@@ -560,19 +625,8 @@ class instalacion:
                 E = 0									#Si no hay que repartir execentes, paro
                 #self.logger.info("13")
             
-            
-            
             if E > 255 : E = 255
             if E < 0 : E = 0
-
-            if precio_venta_actual < 0 and todo_encendido:
-                for i in self.inversores.values():
-                    if not i.dynamic_injection_active:
-                        i.enable_dynamic_power_injection(limit_inyect)
-            else:
-                for i in self.inversores.values():
-                    if i.dynamic_injection_active:
-                        i.disable_dynamic_power_injection()
 
             if d.powerAct != E:
                 if d.setPower(E):              # Si ha habido cambios y se aceptan lo muestro en la LCD
@@ -580,8 +634,7 @@ class instalacion:
                     d.publica_actividad(self.mqtt_client)
                     time.sleep(d.tiempo_reaccion)
                     break
-
-                
+        
             
     def paradaEmergencia(self, logText = "PARADA DE EMERGENCIA Superado maximo KWs permitidos ", espera=60):
         self.logger.warning(str(logText)+" "+str(int(self.excedente))+" de "+str(int(self.maxRed)))

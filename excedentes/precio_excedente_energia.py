@@ -59,13 +59,19 @@ def _get_chrome_driver(download_dir=None, headless=False):
         options.add_argument('--window-size=1920,1080')
     
     # Configuración de descarga
+    actual_download_dir = download_dir or '/tmp'
+    print(f'DEBUG: download_dir parameter = {download_dir}')
+    print(f'DEBUG: actual_download_dir = {actual_download_dir}')
+    print(f'DEBUG: type of actual_download_dir = {type(actual_download_dir)}')
+    
     prefs = {
-        'download.default_directory': download_dir or '/tmp',
+        'download.default_directory': actual_download_dir,
         'download.prompt_for_download': False,
         'download.directory_upgrade': True,
         'safebrowsing.enabled': True,
         'profile.default_content_settings.popups': 0,
     }
+    print(f'Configurando Chrome prefs con directorio: {actual_download_dir}')
     options.add_experimental_option('prefs', prefs)
     
     try:
@@ -89,8 +95,14 @@ def _get_chrome_driver(download_dir=None, headless=False):
 
 def download_esios_price_json(url, download_dir=None, headless=False, label=None):
     if download_dir is None:
-        download_dir = os.path.join(os.path.dirname(__file__), 'downloads')
+        download_dir = os.path.join(os.path.dirname(__file__), 'temp_downloads')
+    download_dir = os.path.abspath(download_dir)  # Convertir a ruta absoluta
     os.makedirs(download_dir, exist_ok=True)
+    print(f'DEBUG: download_esios_price_json - Directorio final: {download_dir}')
+    print(f'DEBUG: download_esios_price_json - Existe directorio: {os.path.exists(download_dir)}')
+    print(f'DEBUG: download_esios_price_json - Contenido del directorio:')
+    for f in os.listdir(download_dir):
+        print(f'  - {f}')
 
     driver = _get_chrome_driver(download_dir=download_dir, headless=headless)
     try:
@@ -124,18 +136,27 @@ def download_esios_price_json(url, download_dir=None, headless=False, label=None
         driver.execute_script('arguments[0].click();', json_option)
 
         print('Opción JSON pulsada, esperando descarga...')
+        print(f'DEBUG: Antes de descarga - Directorio monitoreado: {download_dir}')
+        print(f'DEBUG: Antes de descarga - Archivos existentes:')
+        for f in os.listdir(download_dir):
+            print(f'  - {f}')
         before_files = set(os.listdir(download_dir))
         timeout = time.time() + 60
         downloaded_file = None
+        
+        # Para la segunda descarga, ignorar archivos que ya existen
+        existing_files = set(os.listdir(download_dir))
 
         while time.time() < timeout:
             time.sleep(1)
             current_files = set(os.listdir(download_dir))
-            new_files = current_files - before_files
-            if new_files:
-                for name in new_files:
+            # Solo considerar archivos que no existían antes de esta descarga
+            truly_new_files = current_files - existing_files
+            if truly_new_files:
+                for name in truly_new_files:
                     if name.lower().endswith('.json'):
                         downloaded_file = os.path.join(download_dir, name)
+                        print(f'DEBUG: Nuevo archivo detectado: {name}')
                         break
                     if name.lower().endswith('.part') or name.lower().endswith('.crdownload'):
                         continue
@@ -143,15 +164,29 @@ def download_esios_price_json(url, download_dir=None, headless=False, label=None
                     break
 
         if downloaded_file is None:
-            # Fallback: buscar cualquier json tras esperar unos segundos
+            # Fallback: buscar cualquier json NUEVO tras esperar unos segundos
+            print(f'DEBUG: Fallback - buscando archivos nuevos en directorio configurado: {download_dir}')
             for _ in range(5):
                 time.sleep(1)
-                for name in os.listdir(download_dir):
+                current_files = set(os.listdir(download_dir))
+                new_files = current_files - existing_files
+                for name in new_files:
                     if name.lower().endswith('.json'):
                         downloaded_file = os.path.join(download_dir, name)
+                        print(f'DEBUG: Fallback - nuevo archivo encontrado: {downloaded_file}')
                         break
                 if downloaded_file:
                     break
+            
+            # Si todavía no se encuentra, buscar en el directorio de trabajo actual
+            if downloaded_file is None:
+                current_dir = os.getcwd()
+                print(f'DEBUG: Fallback - buscando en directorio de trabajo actual: {current_dir}')
+                for name in os.listdir(current_dir):
+                    if name.lower().endswith('.json'):
+                        downloaded_file = os.path.join(current_dir, name)
+                        print(f'DEBUG: Fallback - encontrado en directorio de trabajo: {downloaded_file}')
+                        break
 
         if downloaded_file is None:
             # Búsqueda extendida para RPi
@@ -172,7 +207,8 @@ def download_esios_price_json(url, download_dir=None, headless=False, label=None
                 labeled_name = f"{label}_{base_name}"
                 labeled_path = os.path.join(download_dir, labeled_name)
                 if not os.path.exists(labeled_path):
-                    os.rename(downloaded_file, labeled_name)
+                    print(f'DEBUG: Renombrando {downloaded_file} -> {labeled_path}')
+                    os.rename(downloaded_file, labeled_path)
                     downloaded_file = labeled_path
             print(f'Descarga completada: {downloaded_file}')
             return downloaded_file
@@ -256,6 +292,16 @@ def extract_compra_prices(data, geoname='Baleares'):
 
 
 def download_esios_prices(download_dir=None, headless=False):
+    # Usar un directorio persistente si no se especifica uno para evitar problemas con RPi
+    if download_dir is None:
+        download_dir = os.path.join(os.path.dirname(__file__), 'temp_downloads')
+        download_dir = os.path.abspath(download_dir)
+        os.makedirs(download_dir, exist_ok=True)
+        cleanup_temp = False
+    else:
+        download_dir = os.path.abspath(download_dir)
+        cleanup_temp = False
+        
     results = {}
     results['venta'] = download_esios_price_json(
         'https://www.esios.ree.es/es/analisis/1739',
@@ -273,12 +319,14 @@ def download_esios_prices(download_dir=None, headless=False):
 
 
 def download_and_load_prices(download_dir=None, headless=False, geoname='Baleares'):
-    # Usar un directorio temporal si no se especifica uno
+    # Usar un directorio persistente si no se especifica uno para evitar problemas con RPi
     if download_dir is None:
-        temp_dir = tempfile.mkdtemp()
-        download_dir = temp_dir
-        cleanup_temp = True
+        download_dir = os.path.join(os.path.dirname(__file__), 'temp_downloads')
+        download_dir = os.path.abspath(download_dir)
+        os.makedirs(download_dir, exist_ok=True)
+        cleanup_temp = False
     else:
+        download_dir = os.path.abspath(download_dir)
         cleanup_temp = False
     
     try:
@@ -286,8 +334,28 @@ def download_and_load_prices(download_dir=None, headless=False, geoname='Baleare
         if not files['venta'] or not files['compra']:
             raise RuntimeError('No se descargaron ambos archivos correctamente')
 
-        venta_data = load_json_file(files['venta'])
-        compra_data = load_json_file(files['compra'])
+        print(f'Intentando cargar archivos: venta={files["venta"]}, compra={files["compra"]}')
+        
+        # Intentar cargar archivos con reintentos para manejar problemas de acceso temporal
+        max_retries = 3
+        venta_data = None
+        compra_data = None
+        
+        for attempt in range(max_retries):
+            try:
+                if not os.path.exists(files['venta']):
+                    raise FileNotFoundError(f'Archivo de venta no encontrado: {files["venta"]}')
+                if not os.path.exists(files['compra']):
+                    raise FileNotFoundError(f'Archivo de compra no encontrado: {files["compra"]}')
+
+                venta_data = load_json_file(files['venta'])
+                compra_data = load_json_file(files['compra'])
+                break  # Éxito, salir del loop de reintentos
+            except (FileNotFoundError, json.JSONDecodeError) as e:
+                if attempt == max_retries - 1:
+                    raise  # Último intento, propagar el error
+                print(f'Intento {attempt + 1} fallido, reintentando en 2 segundos...')
+                time.sleep(2)
 
         venta_prices = extract_venta_prices(venta_data)
         compra_prices = extract_compra_prices(compra_data, geoname=geoname)

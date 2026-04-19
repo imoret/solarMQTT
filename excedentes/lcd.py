@@ -114,5 +114,5 @@ class lcd:
             linea = ""
             for c in range(0,self.cols):
                 linea += " "
-            self.lcd.cursor_pos(r,0)
+            self.lcd.cursor_pos = (r,0)
             self.lcd.write_string(linea)
