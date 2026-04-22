@@ -1,0 +1,10 @@
+filelock
+paho-mqtt
+typing_extensions
+RPLCD
+smbus2
+pytz
+suntimes
+requests
+selenium
+pyserial

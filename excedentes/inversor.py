@@ -175,7 +175,7 @@ class fronius:
 
 			# Navegar a login
 			LOGIN_URL = f"http://{self.ip}/#/settings"
-			self.logger.info("Iniciando login en interfaz web del inversor")
+			#self.logger.info("Iniciando login en interfaz web del inversor")
 			driver.get(LOGIN_URL)
 
 			user_select_element = wait_until_clickable((By.CSS_SELECTOR, "select[ng-model='username']"))
@@ -199,7 +199,7 @@ class fronius:
 				driver.quit()
 				return False
 
-			self.logger.info("Login exitoso, desactivando inyección dinámica de potencia")
+			#self.logger.info("Login exitoso, desactivando inyección dinámica de potencia")
 
 			# Navegar a configuración
 			evu_link = wait_until_clickable((By.CSS_SELECTOR, "a[ui-sref='settings.evu'], a[href*='#/settings/evu']"))
@@ -258,7 +258,7 @@ class fronius:
 
 			# Navegar a login
 			LOGIN_URL = f"http://{self.ip}/#/settings"
-			self.logger.info("Iniciando login en interfaz web del inversor")
+			#self.logger.info("Iniciando login en interfaz web del inversor")
 			driver.get(LOGIN_URL)
 
 			user_select_element = wait_until_clickable((By.CSS_SELECTOR, "select[ng-model='username']"))
@@ -282,7 +282,7 @@ class fronius:
 				driver.quit()
 				return False
 
-			self.logger.info("Login exitoso, configurando inyección dinámica de potencia")
+			#self.logger.info("Login exitoso, configurando inyección dinámica de potencia")
 
 			# Navegar a configuración
 			evu_link = wait_until_clickable((By.CSS_SELECTOR, "a[ui-sref='settings.evu'], a[href*='#/settings/evu']"))

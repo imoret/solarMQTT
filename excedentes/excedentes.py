@@ -157,7 +157,7 @@ class instalacion:
         from precio_excedente_energia import download_and_load_prices
         import os
         # Usar directorio persistente para evitar problemas con archivos temporales
-        download_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'temp_downloads'))
+        download_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '/tmp/excedentes_downloads'))
         result = download_and_load_prices(download_dir=download_dir, geoname=self.zona_geografica)
         self.precios_venta = result['venta'] 
         self.precios_compra = result['compra']
@@ -256,19 +256,20 @@ class instalacion:
     def thread_lcd(self):
         while not kill_threads:
             try:
-                while self.lcd.parada:
+                while self.lcd.parada and not kill_threads:
                     self.lcd.limpia()
                     self.lcd.parada_emergencia()
                     time.sleep(1)
                     self.lcd.limpia()
                 else:
                     for i in range(1, self.lcd.espera+1):
+                        if kill_threads: break
                         self.lcd.writeLine("PARADA DE EMERGENCIA", 0)
                         self.lcd.writeLine("Reactivacion en ", 1)
                         self.lcd.writeLine("     %s segundos" % str(self.lcd.espera+1-i), 2)
                         time.sleep(1)
                         self.lcd.limpia()
-                if not self.lcd.parada:
+                while not self.lcd.parada and not kill_threads:
                     time.sleep(0.5)
                     self.lcd.muestraProduccion(trunc(self.produccion),trunc(self.excedente))
                     time.sleep(0.5)

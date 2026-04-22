@@ -1,0 +1,24 @@
+[Unit]
+Description=Excedentes MQTT (DEV)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+
+WorkingDirectory=/home/pi/Desktop/solarMQTT_desarrollo/excedentes
+
+ExecStartPre=/bin/sleep 5
+
+ExecStart=/home/pi/Desktop/solarMQTT_desarrollo/solarVenv/bin/python /home/pi/Desktop/solarMQTT_desarrollo/excedentes/excedentes.py
+
+Restart=on-failure
+RestartSec=3
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

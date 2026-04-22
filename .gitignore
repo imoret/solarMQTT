@@ -22,6 +22,7 @@ excedentes/excedentes.conf
 /excedentes/__pycache__
 /excedentes_old/salidaSol.py
 /excedentes_old/solsol.py
+excedentes/temp_downloads/*
 web/excedentes/__pycache__/views.cpython-310.pyc
 web/solarMQTT/__pycache__/settings.cpython-310.pyc
 web/excedentes/__pycache__/__init__.cpython-310.pyc
