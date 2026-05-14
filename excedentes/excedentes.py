@@ -159,6 +159,10 @@ class instalacion:
         # Usar directorio persistente para evitar problemas con archivos temporales
         download_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '/tmp/excedentes_downloads'))
         result = download_and_load_prices(download_dir=download_dir, geoname=self.zona_geografica)
+        if len(result['venta']) != 24 :
+            raise errorNumeroPreciosVenta(f"Numero de precios de venta incorrecto") 
+        if len(result['compra']) != 24 :
+            raise errorNumeroPreciosCompra(f"Numero de precios de compra incorrecto") 
         self.precios_venta = result['venta'] 
         self.precios_compra = result['compra']
         self.logger.info("Precios descargados: venta %d, compra %d" % (len(self.precios_venta), len(self.precios_compra)))
