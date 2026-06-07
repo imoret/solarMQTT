@@ -102,3 +102,4 @@ excedentes.log
 excedentes/inyeccion_0_kk.py
 excedentes/inyeccion_0.py
 excedentes/inyeccion_0_modbus_lectura_de_consumo.py
+web/logs/*
