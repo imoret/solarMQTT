@@ -142,11 +142,12 @@ class instalacion:
         for a in self.arduinos.values():
             a.reset()
 
-        #Descarga inicial de precios
-        try:
+        #Descarga inicial de precios (Ahora se hace en el hilo de descarga diaria)
+        '''try:
             self.descargar_precios()
         except Exception as e:
             self.logger.error("Error en descarga inicial de precios: %s" % e)
+        '''
 
         #Hilo para descarga diaria
         self.daily_download_thread = threading.Thread(target=self.daily_download)
@@ -170,6 +171,10 @@ class instalacion:
     def daily_download(self):
         import time
         from datetime import datetime, timedelta
+        while self.precios_compra[].len() < 24 and self.precios_venta[].len() < 24 and not kill_threads:
+            self.logger.info("Descargando precios...")
+            self.descargar_precios()
+            delay(60)
         while not kill_threads:
             now = datetime.now()
             target = now.replace(hour=0, minute=10, second=0, microsecond=0)
