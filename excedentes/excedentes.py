@@ -171,7 +171,7 @@ class instalacion:
     def daily_download(self):
         import time
         from datetime import datetime, timedelta
-        while self.precios_compra[].len() < 24 and self.precios_venta[].len() < 24 and not kill_threads:
+        while len(self.precios_compra) < 24 and len(self.precios_venta) < 24 and not kill_threads:
             self.logger.info("Descargando precios...")
             self.descargar_precios()
             delay(60)
