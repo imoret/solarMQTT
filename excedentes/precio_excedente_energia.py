@@ -31,8 +31,38 @@ def _detect_raspberry_pi():
     except:
         return False
 
-
 def _get_chrome_driver(download_dir=None, headless=False):
+    options = Options()
+    
+    '''options.add_argument("--headless")'''
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-web-security")
+    options.add_argument("--memory-pressure-off")
+    options.add_argument("--max_old_space_size=256")
+    options.add_argument("--single-process")
+    
+    actual_download_dir = download_dir or '/tmp'
+    prefs = {
+        'download.default_directory': actual_download_dir,
+        'download.prompt_for_download': False,
+        'download.directory_upgrade': True,
+        'safebrowsing.enabled': True,
+        'profile.default_content_settings.popups': 0,
+    }
+    options.add_experimental_option('prefs', prefs)
+        
+    chrome_service = webdriver.ChromeService(executable_path='/usr/bin/chromedriver')
+    driver = webdriver.Chrome(service=chrome_service, options=options)
+    
+    
+    
+    
+    return driver
+
+def _get_chrome_driver_ori(download_dir=None, headless=False):
     """Configura y retorna el driver de Chrome apropiado para la plataforma"""
     is_rpi = _detect_raspberry_pi()
     options = Options()
@@ -40,6 +70,7 @@ def _get_chrome_driver(download_dir=None, headless=False):
     if is_rpi:
         # Configuración específica para Raspberry Pi
         options.binary_location = "/usr/bin/chromium-browser"
+        #options.binary_location = "/usr/bin/chromium"
         options.add_argument("--headless")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")

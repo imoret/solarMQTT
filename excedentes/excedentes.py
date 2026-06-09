@@ -174,7 +174,7 @@ class instalacion:
         while len(self.precios_compra) < 24 and len(self.precios_venta) < 24 and not kill_threads:
             self.logger.info("Descargando precios...")
             self.descargar_precios()
-            delay(60)
+            time.sleep(60)
         while not kill_threads:
             now = datetime.now()
             target = now.replace(hour=0, minute=10, second=0, microsecond=0)

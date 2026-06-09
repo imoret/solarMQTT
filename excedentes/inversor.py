@@ -107,7 +107,7 @@ class fronius:
 		except:
 			return False
 
-	def _get_chrome_driver(self):
+	def _get_chrome_driver_ori(self):
 		"""Configura y retorna el driver de Chrome apropiado para la plataforma"""
 		chrome_options = Options()
 		
@@ -150,6 +150,24 @@ class fronius:
 			except Exception:
 				# Fallback sin Service
 				driver = webdriver.Chrome(options=chrome_options)
+		
+		return driver
+
+	def _get_chrome_driver(download_dir=None, headless=False):
+		options = Options()
+		
+		options.add_argument("--headless")
+		options.add_argument("--no-sandbox")
+		options.add_argument("--disable-dev-shm-usage")
+		options.add_argument("--disable-gpu")
+		options.add_argument("--disable-extensions")
+		options.add_argument("--disable-web-security")
+		options.add_argument("--memory-pressure-off")
+		options.add_argument("--max_old_space_size=256")
+		options.add_argument("--single-process")
+			
+		chrome_service = webdriver.ChromeService(executable_path='/usr/bin/chromedriver')
+		driver = webdriver.Chrome(service=chrome_service, options=options)
 		
 		return driver
 
