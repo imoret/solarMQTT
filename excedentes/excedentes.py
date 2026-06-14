@@ -7,7 +7,7 @@ from dispositivo import dispositivo
 from arduino import arduino_serial, arduino_MQTT, shelly
 from lcd import lcd
 from inversor import fronius
-from signal import signal, SIGINT
+from signal import signal, SIGINT, SIGTERM
 from sys import exit
 from filelock import Timeout, FileLock
 import serial,time, sched
@@ -694,6 +694,7 @@ def salidaAlegre(signal_received, frame):
 def principal():
 	# Tell Python to run the handler() function when SIGINT is recieved
     signal(SIGINT, salidaAlegre)
+    signal(SIGTERM, salidaAlegre)
     global kill_threads
 	
     logger = logging.getLogger('main')
@@ -741,6 +742,8 @@ def principal():
 		
 if __name__ == "__main__":
 	# Tell Python to run the handler() function when SIGINT is recieved
-	signal(SIGINT, salidaAlegre)
-	
-	principal()
+    signal(SIGINT, salidaAlegre)
+    print("KK")
+    signal(SIGTERM, salidaAlegre)
+    
+    principal()

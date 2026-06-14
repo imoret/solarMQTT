@@ -1,0 +1,12 @@
+[Unit]
+Description=Excedentes daemon for Excedente_MQTT project
+After=network.target
+
+[Service]
+User=moret
+Group=moret
+WorkingDirectory=/home/moret/Desktop/solarMQTT/excedentes
+ExecStart=/home/moret/Desktop/solarMQTT/venv/bin/python excedentes.py
+TimeoutStopSec=10
+[Install]
+WantedBy=multi-user.target

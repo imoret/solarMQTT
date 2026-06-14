@@ -1,0 +1,12 @@
+[Unit]
+Description=Gunicorn daemon for Excedente_MQTT project
+After=network.target
+
+[Service]
+User=moret
+Group=www-data
+WorkingDirectory=/home/moret/Desktop/solarMQTT/web
+ExecStart=/home/moret/Desktop/solarMQTT/venv/bin/gunicorn --access-logfile - --workers 3 --bind 127.0.0.1:8001 solarMQTT.wsgi:application
+
+[Install]
+WantedBy=multi-user.target
