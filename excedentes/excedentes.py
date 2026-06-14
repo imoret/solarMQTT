@@ -172,21 +172,27 @@ class instalacion:
         import time
         from datetime import datetime, timedelta
         while len(self.precios_compra) < 24 and len(self.precios_venta) < 24 and not kill_threads:
-            self.logger.info("Descargando precios...")
-            self.descargar_precios()
-            time.sleep(60)
+            try:
+                self.logger.info("Descargando precios...")
+                self.descargar_precios()
+                time.sleep(60)
+            except Exception as e:
+                self.logger.error("Error en descarga inicial: %s. Reintentando en 10 minutos." % e)
+                # Dormir 10 minutos en intervalos de 6 segundos
+                remaining = 600
+                while remaining > 0 and not kill_threads:
+                    time.sleep(min(6, remaining))
+                    remaining -= 6
         while not kill_threads:
             now = datetime.now()
             target = now.replace(hour=0, minute=10, second=0, microsecond=0)
             if now >= target:
                 target += timedelta(days=1)
             sleep_time = (target - now).total_seconds()
-            # Dormir en intervalos de 60 segundos para permitir interrupción
+            # Dormir en intervalos de 3 segundos para permitir interrupción
             while sleep_time > 0 and not kill_threads:
-                time.sleep(min(60, sleep_time))
-                sleep_time -= 60
-            if kill_threads:
-                break
+                time.sleep(min(3, sleep_time))
+                sleep_time -= 3
             while not kill_threads:
                 try:
                     self.descargar_precios()
