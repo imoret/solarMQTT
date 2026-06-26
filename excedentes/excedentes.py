@@ -249,10 +249,10 @@ class instalacion:
                         #except Exception as e:
                          #   self.logger.error(e)
 					#self.puerto.reset_input_buffer()
-                if time.time() - lastTime > 60:
-                    self.logger.error("No se han recibido comandos en 60 segundos")
-                    self.arduinos[arduino].reset()
-                    lastTime = time.time()
+                    if time.time() - lastTime > 60:
+                        self.logger.error("No se han recibido comandos en 60 segundos")
+                        self.arduinos[arduino].reset()
+                        lastTime = time.time()
                 except Exception as e:
                     #pass
                     self.logger.error("En recibeComando: %s" % (e))
