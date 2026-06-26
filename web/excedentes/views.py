@@ -198,6 +198,7 @@ def rebooting_now(request):
     if request.user.is_authenticated:
         try:
             # Opción 1: Usando subprocess (más seguro y controlado)
+            # Esto ya no funciona por que ahora se ejecuta como demonio con un usuario.
             subprocess.Popen(['sudo', 'reboot'], 
                            stdout=subprocess.DEVNULL, 
                            stderr=subprocess.DEVNULL)
