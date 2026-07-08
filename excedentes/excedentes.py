@@ -172,21 +172,27 @@ class instalacion:
         import time
         from datetime import datetime, timedelta
         while len(self.precios_compra) < 24 and len(self.precios_venta) < 24 and not kill_threads:
-            self.logger.info("Descargando precios...")
-            self.descargar_precios()
-            time.sleep(60)
+            try:
+                self.logger.info("Descargando precios...")
+                self.descargar_precios()
+                time.sleep(60)
+            except Exception as e:
+                self.logger.error("Error en descarga inicial: %s. Reintentando en 10 minutos." % e)
+                # Dormir 10 minutos en intervalos de 6 segundos
+                remaining = 600
+                while remaining > 0 and not kill_threads:
+                    time.sleep(min(6, remaining))
+                    remaining -= 6
         while not kill_threads:
             now = datetime.now()
             target = now.replace(hour=0, minute=10, second=0, microsecond=0)
             if now >= target:
                 target += timedelta(days=1)
             sleep_time = (target - now).total_seconds()
-            # Dormir en intervalos de 60 segundos para permitir interrupción
+            # Dormir en intervalos de 3 segundos para permitir interrupción
             while sleep_time > 0 and not kill_threads:
-                time.sleep(min(60, sleep_time))
-                sleep_time -= 60
-            if kill_threads:
-                break
+                time.sleep(min(3, sleep_time))
+                sleep_time -= 3
             while not kill_threads:
                 try:
                     self.descargar_precios()
@@ -201,6 +207,7 @@ class instalacion:
 
     def recibeComando(self, puerto, semaforoCom, arduino):		
         global kill_threads
+        lastTime = time.time()
         '''
         canal = 'event'
         destino = 'Arduinos'
@@ -230,6 +237,7 @@ class instalacion:
                         
                         topic=destino+'/'+nombre+'/'+canal
                         self.mqtt_client.publish(topic,decoded_message)
+                        lastTime = time.time()
                         #self.logger.debug("Publicado: %s en %s" %(decoded_message, topic))
                         #self.mqtt_client.disconnect()
                             
@@ -241,6 +249,10 @@ class instalacion:
                         #except Exception as e:
                          #   self.logger.error(e)
 					#self.puerto.reset_input_buffer()
+                    if time.time() - lastTime > 60:
+                        self.logger.error("No se han recibido comandos en 60 segundos")
+                        self.arduinos[arduino].reset()
+                        lastTime = time.time()
                 except Exception as e:
                     #pass
                     self.logger.error("En recibeComando: %s" % (e))
@@ -743,7 +755,6 @@ def principal():
 if __name__ == "__main__":
 	# Tell Python to run the handler() function when SIGINT is recieved
     signal(SIGINT, salidaAlegre)
-    print("KK")
     signal(SIGTERM, salidaAlegre)
     
     principal()
