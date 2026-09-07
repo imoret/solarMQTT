@@ -10,6 +10,7 @@ import traceback
 import json
 import tempfile
 import shutil
+import subprocess
 import platform
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -54,7 +55,7 @@ def _get_chrome_driver(download_dir=None, headless=False):
     }
     options.add_experimental_option('prefs', prefs)
         
-    chrome_service = webdriver.ChromeService(executable_path='/usr/bin/chromedriver')
+    chrome_service = webdriver.ChromeService(executable_path='/usr/bin/chromedriver', log_output=subprocess.DEVNULL)
     driver = webdriver.Chrome(service=chrome_service, options=options)
     
     
@@ -135,8 +136,9 @@ def download_esios_price_json(url, download_dir=None, headless=False, label=None
     #for f in os.listdir(download_dir):
         # print(f'  - {f}')
 
-    driver = _get_chrome_driver(download_dir=download_dir, headless=headless)
+    driver = None
     try:
+        driver = _get_chrome_driver(download_dir=download_dir, headless=headless)
         # Configurar comportamiento de descarga para RPi
         is_rpi = _detect_raspberry_pi()
         if headless or is_rpi:
@@ -252,7 +254,19 @@ def download_esios_price_json(url, download_dir=None, headless=False, label=None
         return None
 
     finally:
-        driver.quit()
+        if driver is not None:
+            try:
+                driver.quit()
+            except Exception:
+                pass
+            # Red de seguridad: si quit() no ha terminado el subproceso chromedriver, forzarlo
+            try:
+                process = driver.service.process
+                if process is not None and process.poll() is None:
+                    process.kill()
+                    process.wait(timeout=5)
+            except Exception:
+                pass
 
 
 def load_json_file(path):

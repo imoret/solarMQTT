@@ -34,7 +34,6 @@ class arduino:
 	def __init__(self,nombre, broker_address, mqtt_client):
 		self.nombre=nombre
 		self.online = True
-		self.kill_threads = False
 		self.broker_address = broker_address
 		self.client = mqtt_client
 		
@@ -54,7 +53,7 @@ class arduino:
 		fhd.setFormatter(formatter)
 		self.logger.addHandler(fhd)
 
-		self.subscribe()
+		#self.subscribe()
 
 	def subscribe(self):
 		pass
@@ -115,7 +114,10 @@ class arduino_serial(arduino):
 		self.enviaComando(msg)
 		'''
 		self.logger.error("MIERDA, EL ARDUINO SE HA COLGADO!!!!")
-		delattr(self,"puerto")
+		try:
+			self.puerto.close()  # liberar el fd viejo antes de sustituirlo, evita fuga de descriptores
+		except Exception:
+			pass
 		self.puerto = self.creaPuerto(self.pto)
 		self.puerto.close()
 		self.puerto.open()
@@ -143,9 +145,8 @@ class arduino_serial(arduino):
 		self.enviaComando(msg)
 		
 	def subscribe(self):
-		#self.logger.info("Suscricion a Arduinos/%s/event" % self.nombre)
+		self.logger.info("Suscricion a Arduino %s" % self.nombre)
 		self.client.subscribe("Arduinos/%s/event" % self.nombre)
-		#self.logger.info("Suscricion a Arduinos/%s/online" % self.nombre)
 		self.client.subscribe("Arduinos/%s/online" % self.nombre)
 
 #arduino conectado por MQTT	
@@ -166,7 +167,8 @@ class arduino_MQTT(arduino):
 			self.client.publish(topic,mensaje)
 			#self.client.disconnect()
 			return(True)
-		except:
+		except Exception as e:
+			self.logger.error("Al enviar comando %s",e)
 			return(False)
 	
 	def setPin(self,nombre,valor):
@@ -177,6 +179,7 @@ class arduino_MQTT(arduino):
 		self.enviaComando('{"command":"reset"}')
 
 	def subscribe(self):
+		self.logger.info("Suscricion a Arduino %s" % self.nombre)
 		self.client.subscribe("Arduinos/%s/event" % self.nombre)
 		self.client.subscribe("Arduinos/%s/online" % self.nombre)
   
@@ -210,6 +213,7 @@ class shelly(arduino):
 		self.enviaComando('{"id":1, "method":"Shelly.Reboot"}')
   
 	def subscribe(self):
+		self.logger.info("Suscricion a Shelly %s" % self.nombre)
 		self.client.subscribe("Shellys/%s/status/switch:0" % self.nombre)
 		self.client.subscribe("Shellys/%s/online" % self.nombre)
 

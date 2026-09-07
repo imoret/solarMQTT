@@ -1,6 +1,7 @@
 from math import trunc
 import json
 import logging
+import os
 import threading
 import operator
 from dispositivo import dispositivo
@@ -15,15 +16,14 @@ from datetime import datetime
 import paho.mqtt.client as mqtt #import the client1
 from RPLCD import i2c
 
-kill_threads = False
+kill_threads = threading.Event()
 
 class instalacion:
     def __init__(self):
-        global kill_threads
-        
         self.inversores = {}
         self.arduinos = {}
         self.dispositivos = {}
+        self.threads = {}
         
         self.produccion = 0
         self.excedente = 0
@@ -59,6 +59,7 @@ class instalacion:
                 self.lcd_control = threading.Thread(target=self.thread_lcd)
                 self.lcd_control.daemon = True
                 self.lcd_control.start()
+                self.threads["lcd"] = self.lcd_control
             else:
                 self.lcd = False
             
@@ -71,7 +72,7 @@ class instalacion:
             self.mqtt_client.on_subscribe = self.on_subscribe
             self.mqtt_client.on_unsubscribe = self.on_unsubscribe
             self.logger.info("Inicio conexion al servidor MQTT")
-            self.mqtt_client.connect(self.broker_address)
+            
             
             self.logger.info("Cargando inversores")
             for i in conf['inversores']:				
@@ -82,19 +83,16 @@ class instalacion:
             for a in conf['arduinos_serial']:
                 aux=arduino_serial(a['nombre'],a['puerto'], self.broker_address, self.mqtt_client)
                 self.arduinos[a['nombre']]=aux
-                #self.arduinos[a['nombre']].subscribe()
 
             self.logger.info("Cargando arduinos MQTT")   
             for l in conf['arduinos_MQTT']:
                 aux=arduino_MQTT(l['nombre'],self.broker_address, self.mqtt_client)
                 self.arduinos[l['nombre']]=aux
-                #self.arduinos[l['nombre']].subscribe()
                 
             self.logger.info("Cargando Shellys")
             for s in conf['shellys']:
                 aux=shelly(s['nombre'], self.broker_address, self.mqtt_client)
                 self.arduinos[s['nombre']]=aux
-                #self.arduinos[s['nombre']].subscribe()
             
             self.logger.info("Cargando dispositivos")
             for d in conf['dispositivos']:
@@ -107,22 +105,24 @@ class instalacion:
                 t_on = d["modos"][d['modoDia'][datetime.today().weekday()]]["timeOn"]
                 t_off = d["modos"][d['modoDia'][datetime.today().weekday()]]["timeOff"]
                 consumirE = d["modos"][d['modoDia'][datetime.today().weekday()]]["consumirExcedente"]
+                kill_ths = kill_threads
                 tiempo_al_dia = d["modos"][d['modoDia'][datetime.today().weekday()]]["tiempoAldia"]
                 tiempo_maximo = d["modos"][d['modoDia'][datetime.today().weekday()]]["tiempoMaximo"]
                 tiempo_seguido = d["modos"][d['modoDia'][datetime.today().weekday()]]["tiempoSeguido"]
                 hora_corte = d["modos"][d['modoDia'][datetime.today().weekday()]]["horaCorte"]
                 minPower = d['minPower']
                 tReact = d['tiempo_reaccion']
-                aux = dispositivo(tipo, nombre, power, ardu, pin, pinPower, t_on, t_off, consumirE, tiempo_al_dia, tiempo_maximo, tiempo_seguido, hora_corte, minPower, tReact)
+                aux = dispositivo(tipo, nombre, power, ardu, pin, pinPower, t_on, t_off, consumirE, kill_ths, tiempo_al_dia, tiempo_maximo, tiempo_seguido, hora_corte, minPower, tReact)
                 self.dispositivos[d['nombre']] = aux
-                self.dispositivos[d['nombre']].subscribe(self.mqtt_client)
-                    
-                
+
+            # Inicio la conexion al servidor MQTT       
+            self.mqtt_client.connect(self.broker_address)   
 
         #Creo un hilo que actualiza la produccion/excedente
         self.update_control = threading.Thread(target=self.update)
         self.update_control.daemon = True
         self.update_control.start()
+        self.threads["update_control"] = self.update_control
 
         #Creo un hilo para cada arduino serial que sera el encargado de recibir mensajes
         for a in self.arduinos.values():
@@ -130,15 +130,17 @@ class instalacion:
                 self.receptor = threading.Thread(target=self.recibeComando, args=(a.puerto, a.semaforoCom, a.nombre))
                 self.receptor.daemon = True
                 self.receptor.start()
+                self.threads["arduino_"+a.nombre] = self.receptor
         
         #Creo un hilo que gestiona las conexiones MQTT.
         self.semaforoCom = threading.Semaphore(1)	#Semaforo para maniobrar el arduino
         self.mqtt_control = threading.Thread(target=self.thread_mqtt)
         self.mqtt_control.daemon = True
         self.mqtt_control.start()
+        self.threads["mqtt_control"] = self.mqtt_control
 
         #Reinicio los arduinos
-        time.sleep(5)
+        kill_threads.wait(5)
         for a in self.arduinos.values():
             a.reset()
 
@@ -153,6 +155,27 @@ class instalacion:
         self.daily_download_thread = threading.Thread(target=self.daily_download)
         self.daily_download_thread.daemon = True
         self.daily_download_thread.start()
+        self.threads["daily_download"] = self.daily_download_thread
+
+        #Hilo de diagnostico: registra el numero de file descriptors abiertos periodicamente
+        self.fd_monitor_thread = threading.Thread(target=self.thread_fd_monitor)
+        self.fd_monitor_thread.daemon = True
+        self.fd_monitor_thread.start()
+        self.threads["fd_monitor"] = self.fd_monitor_thread
+
+    def log_fd_count(self, contexto=""):
+        # Cuenta los fds abiertos del propio proceso; util para detectar fugas lentas (semanas/meses)
+        try:
+            num_fds = len(os.listdir('/proc/self/fd'))
+            self.logger.info("Fds abiertos%s: %d" % ((" (%s)" % contexto) if contexto else "", num_fds))
+        except Exception as e:
+            self.logger.error("No se pudo contar los fds abiertos: %s" % e)
+
+    def thread_fd_monitor(self):
+        while not kill_threads.is_set():
+            self.log_fd_count("monitor periodico")
+            if kill_threads.wait(3600):
+                break
 
     def descargar_precios(self):
         from precio_excedente_energia import download_and_load_prices
@@ -161,9 +184,9 @@ class instalacion:
         download_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '/tmp/excedentes_downloads'))
         result = download_and_load_prices(download_dir=download_dir, geoname=self.zona_geografica)
         if len(result['venta']) != 24 :
-            raise errorNumeroPreciosVenta(f"Numero de precios de venta incorrecto") 
+            raise ValueError(f"Numero de precios de venta incorrecto")
         if len(result['compra']) != 24 :
-            raise errorNumeroPreciosCompra(f"Numero de precios de compra incorrecto") 
+            raise ValueError(f"Numero de precios de compra incorrecto")
         self.precios_venta = result['venta'] 
         self.precios_compra = result['compra']
         self.logger.info("Precios descargados: venta %d, compra %d" % (len(self.precios_venta), len(self.precios_compra)))
@@ -171,42 +194,40 @@ class instalacion:
     def daily_download(self):
         import time
         from datetime import datetime, timedelta
-        while len(self.precios_compra) < 24 and len(self.precios_venta) < 24 and not kill_threads:
+        while len(self.precios_compra) < 24 and len(self.precios_venta) < 24 and not kill_threads.is_set():
             try:
                 self.logger.info("Descargando precios...")
                 self.descargar_precios()
-                time.sleep(60)
+                self.log_fd_count("tras descarga inicial de precios")
+                if kill_threads.wait(60):
+                    break
             except Exception as e:
                 self.logger.error("Error en descarga inicial: %s. Reintentando en 10 minutos." % e)
+                self.log_fd_count("tras fallo en descarga inicial de precios")
                 # Dormir 10 minutos en intervalos de 6 segundos
-                remaining = 600
-                while remaining > 0 and not kill_threads:
-                    time.sleep(min(6, remaining))
-                    remaining -= 6
-        while not kill_threads:
+                if kill_threads.wait(600):
+                    break
+        while not kill_threads.is_set():
             now = datetime.now()
             target = now.replace(hour=0, minute=10, second=0, microsecond=0)
             if now >= target:
                 target += timedelta(days=1)
             sleep_time = (target - now).total_seconds()
-            # Dormir en intervalos de 3 segundos para permitir interrupción
-            while sleep_time > 0 and not kill_threads:
-                time.sleep(min(3, sleep_time))
-                sleep_time -= 3
-            while not kill_threads:
+            if kill_threads.wait(sleep_time):
+                break
+            while not kill_threads.is_set():
                 try:
                     self.descargar_precios()
+                    self.log_fd_count("tras descarga diaria de precios")
                     break  # éxito, salir del loop de reintentos
                 except Exception as e:
                     self.logger.error("Error en descarga diaria: %s. Reintentando en 10 minutos." % e)
-                    # Dormir 10 minutos en intervalos de 60 segundos
-                    remaining = 600
-                    while remaining > 0 and not kill_threads:
-                        time.sleep(min(60, remaining))
-                        remaining -= 60
+                    self.log_fd_count("tras fallo en descarga diaria de precios")
+                    # Dormir 10 minutos
+                    if kill_threads.wait(600):
+                        break
 
     def recibeComando(self, puerto, semaforoCom, arduino):		
-        global kill_threads
         lastTime = time.time()
         '''
         canal = 'event'
@@ -216,7 +237,7 @@ class instalacion:
         mensaje = '{"event":"init"}'
         self.mqtt_client.publish(topic,mensaje)
         '''
-        while not kill_threads:
+        while not kill_threads.is_set():
             with semaforoCom:
                 #self.logger.debug("Bloqueo el semaforo")
                 try:
@@ -260,54 +281,69 @@ class instalacion:
                     #exit()
                 #self.logger.debug("Desbloqueo el semaforo")
 
-            time.sleep(0.1)
+            if kill_threads.wait(0.1):
+                break
         self.logger.info("Matando hilo<--------------------------------------------")
 
     def thread_mqtt(self):
-        while not kill_threads:
+        while not kill_threads.is_set():
             try:
                 self.logger.info("Inicio el loop_forever MQTT")
                 self.mqtt_client.loop_forever()
                 self.logger.error("Cliente MQTT desconectado!!!")
-                time.sleep(4)
+                if kill_threads.wait(4):
+                    break
             except Exception as e:
                 self.logger.error("Error en el hilo MQTT: %s" % e)
-                time.sleep(5)
+                if kill_threads.wait(5):
+                    break
             
     def thread_lcd(self):
-        while not kill_threads:
+        while not kill_threads.is_set():
             try:
-                while self.lcd.parada and not kill_threads:
+                while self.lcd.parada and not kill_threads.is_set():
                     self.lcd.limpia()
                     self.lcd.parada_emergencia()
-                    time.sleep(1)
+                    if kill_threads.wait(1):
+                        break
                     self.lcd.limpia()
                 else:
                     for i in range(1, self.lcd.espera+1):
-                        if kill_threads: break
+                        if kill_threads.is_set(): break
                         self.lcd.writeLine("PARADA DE EMERGENCIA", 0)
                         self.lcd.writeLine("Reactivacion en ", 1)
                         self.lcd.writeLine("     %s segundos" % str(self.lcd.espera+1-i), 2)
-                        time.sleep(1)
+                        if kill_threads.wait(1):
+                            break
                         self.lcd.limpia()
-                while not self.lcd.parada and not kill_threads:
-                    time.sleep(0.5)
+                while not self.lcd.parada and not kill_threads.is_set():
+                    if kill_threads.wait(0.5):
+                        break
                     self.lcd.muestraProduccion(trunc(self.produccion),trunc(self.excedente))
-                    time.sleep(0.5)
+                    if kill_threads.wait(0.5):
+                        break
                     self.lcd.muestraProduccion(trunc(self.produccion),trunc(self.excedente))
                     self.lcd.muestra_dispositivos(self.dispositivos.values())
             except Exception as e:
                 self.logger.error("Error en el hilo LCD: %s" % e)
-                time.sleep(5)
+                if kill_threads.wait(5):
+                    break
   
     ################ Al conectar MQTT #################
     def on_connect(self, client, userdata, flags, rc):
         resultado = ['Connection successful', 'Connection refused - incorrect protocol version', 'Connection refused - invalid client identifier', 'Connection refused - server unavailable', 'Connection refused - bad username or password', 'Connection refused - not authorised']
         self.logger.info("Resultado de la conexion MQTT: "+resultado[rc])
+
+        for a in self.arduinos.values():
+            a.subscribe()
+            
+        for d in self.dispositivos.values():
+            d.subscribe(self.mqtt_client)
 	
 	############### Subscipciones/ unsubscripciones ###
     def on_subscribe(self,client, userdata, mid, granted_qos):
-        self.logger.info("Suscripcion "+str(mid)+": "+str(granted_qos))
+        pass
+        #self.logger.info("Suscripcion "+str(mid)+": "+str(granted_qos))
 		
     def on_unsubscribe(self, client, userdata, mid):
         self.logger.info("Cagon to!!! --->  Desuscripcion a topic MQTT  <----: "+str(mid));
@@ -363,7 +399,8 @@ class instalacion:
                                 self.logger.info("Orden setup para %s" % d.nombre)
                                 p=d.powerAct
                                 d.setup()
-                                time.sleep(1)
+                                if kill_threads.wait(1):
+                                    break
                                 d.setPower(p)
                 if destino == "Dispositivos":
                     pass
@@ -448,7 +485,8 @@ class instalacion:
 
     def desactiva_modo_manual(self, dispositivo):
         for i in range(dispositivo.tiempoModoManualActivo):
-            time.sleep(1)
+            if kill_threads.wait(1):
+                break
             if dispositivo.kill_threadModoManual:
                 dispositivo.kill_threadModoManual = False
                 exit()
@@ -457,7 +495,7 @@ class instalacion:
         self.logger.info("%s modo manual a %s" %(dispositivo.nombre, dispositivo.modoManual))
 
     def update(self):
-        while not kill_threads:
+        while not kill_threads.is_set():
             try:
                 e = 0
                 p = 0
@@ -482,10 +520,12 @@ class instalacion:
                 mensaje = '{"produccion":%f, "excedente":%f, "autoconsumo" : %f, "consumo" : %f}' %(p, e, ac, co)
                 self.mqtt_client.publish(topic,mensaje)
 
-                time.sleep(0.5)
+                if kill_threads.wait(0.5):
+                    break
             except Exception as e:
                 self.logger.error("Error en el hilo de actualizacion: %s" % e)
-                time.sleep(5)
+                if kill_threads.wait(0.5):
+                    break
         
     def disponible_dispositivos(self, nombre):
         '''
@@ -572,7 +612,8 @@ class instalacion:
                     desactivar_inyeccion = False 
                     #self.logger.info("Desactivación cancelada")
                     break
-                time.sleep(0.5)
+                if kill_threads.wait(0.5):
+                    break
             if desactivar_inyeccion:
                 for i in self.inversores.values():
                     if i.dynamic_injection_active:
@@ -654,14 +695,14 @@ class instalacion:
                 if d.setPower(E):              # Si ha habido cambios y se aceptan lo muestro en la LCD
                     #self.logger.info("Produccion %s, excendente %s - Dispositivo %s con disponible %s puesto a %s" %(self.produccion, self.excedente, d.nombre, disponible, E))
                     d.publica_actividad(self.mqtt_client)
-                    time.sleep(d.tiempo_reaccion)
-                    break
-        
+                    kill_threads.wait(d.tiempo_reaccion)
+                    #break          #Como se hace una espera y la actualizacion de consumo se hace en otro hilo ya no hace falta. 
+                                    #Ademas este break produce un bloqueo cuando un dispositivo no contesta, ya que se le hacen siempre las "llamadas" al mismo dispositivo sin llegar a hacer nada.
             
     def paradaEmergencia(self, logText = "PARADA DE EMERGENCIA Superado maximo KWs permitidos ", espera=60):
         self.logger.warning(str(logText)+" "+str(int(self.excedente))+" de "+str(int(self.maxRed)))
         estadoAnterior = {}
-        while True:	#do while bucl+   
+        while True or not kill_threads.is_set():	#do while bucl+   
             if self.lcd:
                 self.lcd.parada=True
                 self.lcd.espera=espera  
@@ -670,11 +711,12 @@ class instalacion:
                 if d.modoManual:
                     estadoAnterior[d.nombre] = d.powerAct
                 d.setPower(0)                     
-            time.sleep(10)		
+            if kill_threads.wait(10):
+                break	
             if self.excedente < self.maxRed: #¢ondicion de salida
                 break
         self.lcd.parada=False
-        time.sleep(espera)
+        kill_threads.wait(espera)
         for d in self.dispositivos.values():
             d.emergencia = False
             if d.modoManual:
@@ -688,7 +730,7 @@ class instalacion:
 ########### ctrl+c cierra el programa ############	
 def salidaAlegre(signal_received, frame):
 	global kill_threads
-	kill_threads = True
+	kill_threads.set()
 	time.sleep(5)
 	print('SIGINT o CTRL-C detectado. Saliendo alegremente')
 	logger = logging.getLogger('main')
@@ -707,7 +749,6 @@ def principal():
 	# Tell Python to run the handler() function when SIGINT is recieved
     signal(SIGINT, salidaAlegre)
     signal(SIGTERM, salidaAlegre)
-    global kill_threads
 	
     logger = logging.getLogger('main')
     logger.setLevel(logging.DEBUG)
@@ -721,7 +762,7 @@ def principal():
 	
 	# nuevaConf = False 
     casa = instalacion()
-    while not kill_threads:
+    while not kill_threads.is_set():
         if casa.excedente > casa.maxRed:
             casa.paradaEmergencia()
         else:
@@ -742,13 +783,7 @@ def principal():
 					conf['nuevaConf'] = False
 					json.dump(conf, fileConf, indent=4)
     '''
-    for d in casa.dispositivos.values():
-        d.kill_threads = True
-    for a in casa.arduinos.values():
-        a.kill_threads = True
-    kill_threads = True
-    casa.mqtt_client.disconnect()
-    casa.paradaEmergencia("SALIENDO",10)
+    casa.paradaEmergencia("SALIEDA ALEGRE",5)
 	
 
 		

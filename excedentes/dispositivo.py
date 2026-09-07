@@ -1,13 +1,15 @@
 import logging
 import time
 import threading
+import os
+import errno
 from datetime import datetime
 import json
 from filelock import Timeout, FileLock
 import paho.mqtt.client as mqtt #import the client1
 
 class dispositivo:
-	def __init__(self, tipo, nombre, power, ardu, pinconect, pinpower, hOn, hOff, consumirE, tiempoAlDia=3600,tiempoMaximo=0, minTiempoSeguidoEnMarcha=10, horaC=12, minPower=20, tReact=0.5):
+	def __init__(self, tipo, nombre, power, ardu, pinconect, pinpower, hOn, hOff, consumirE, kill_threads, tiempoAlDia=3600,tiempoMaximo=0, minTiempoSeguidoEnMarcha=10, horaC=12, minPower=20, tReact=0.5):
 		self.tipo = tipo
 		self.nombre=nombre
 		self.power = int(power)
@@ -21,6 +23,7 @@ class dispositivo:
 		self.consumExcedente = consumirE
 		self.consumo = 0
 		self.online = True
+		self.kill_threads = kill_threads
 
 		self.tiempoDiario=tiempoAlDia*60
 		self.tiempoMaximo=tiempoMaximo*60
@@ -47,7 +50,6 @@ class dispositivo:
 		self.semaforoCom = threading.Semaphore(1)
 
 		#creo un hilo que carge la configuacion cada dia
-		self.kill_threads = False
 		self.r = threading.Thread(target=self.threadDiario)
 		self.r.setDaemon(True)
 		self.r.start()
@@ -56,17 +58,15 @@ class dispositivo:
 		self.logger.info("inicio con t: %s y pmin %s" % (self.tiempoHoy, self.minPower))
 	
 	def threadDiario(self):
-		while not self.kill_threads:
+		while not self.kill_threads.is_set():
 			h=datetime.now().hour*3600+datetime.now().minute*60+datetime.now().second		
 			if (h<self.horaCorte):
 				dormir = self.horaCorte-h
 			else:
 				dormir = self.horaCorte+(86400-h)
 			#self.logger.info("Son las: "+str(h)+" HoraCorte es: "+str(self.horaCorte)+" Faltan: "+str(dormir))
-			for i in range(0, dormir):
-				time.sleep(1)
-				if self.kill_threads:
-					break
+			if self.kill_threads.wait(dormir):
+				break
 			self.nuevaConf()
 			self.resetea()
 			
@@ -133,13 +133,19 @@ class dispositivo:
 		except Exception as e:
 			self.logger.error("No es posible cargar la nueva configuracion")
 			self.logger.error(e)
+			if isinstance(e, OSError) and e.errno == errno.EMFILE:
+				# Fds del proceso agotados: no hay forma de recuperarse en caliente, forzamos
+				# la salida para que systemd (Restart=on-failure) reinicie y libere los fds
+				self.logger.critical("EMFILE detectado: forzando salida del proceso para permitir el reinicio")
+				self.kill_threads.set()
+				os._exit(1)
    
 	def subscribe(self, client):
 		if self.ard.conexion == "MQTT" or self.ard.conexion == "serial":
-			#self.logger.info("Suscripcion a: Dispositivos/%s/status" % self.nombre)
 			client.subscribe("Dispositivos/%s/status" % self.nombre)
 			client.subscribe("Dispositivos/%s/online" % self.nombre)
 			client.subscribe("Dispositivos/%s/command" % self.nombre)
+			self.logger.info("Suscripcion a: Dispositivo %s" % self.nombre)
    
 	def setup(self):
 		self.ard.setup(self.tipo, self.nombre, self.pin, self.pinPower)
