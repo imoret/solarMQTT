@@ -20,7 +20,7 @@
 
       setInterval(function () {
           solicitaDatos();
-        }, 2000);
+        }, 1000);
 
         function solicitaDatos(){
           conecta('get_data');
@@ -189,7 +189,7 @@
           setInterval(function() {
             data_{{d.nombre}}.setValue(0, 1, datos['dispositivos']["{{d.nombre}}"]['consumo']);
             chart_{{d.nombre}}.draw(data_{{d.nombre}}, options_{{d.nombre}});
-          }, 2000);
+          }, 1000);
         {% endfor %}
       }
     </script>
