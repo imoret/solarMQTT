@@ -13,10 +13,6 @@ class lcd:
         self.lcdLuz=True
         self.cols = 20
         self.rows = 4
-        charmap = 'A00'
-        i2c_expander = 'PCF8574'
-        address = 0x27 
-        port = 1
         self.lineas = ["","",""]
         self.latitud = lat
         self.longitud = lon
@@ -24,18 +20,32 @@ class lcd:
         self.parada = False
         self.espera = 0
 
+        self.lcd = None
+        self._conecta()
+
+    def _conecta(self):
+        self._cierra()
         try:
-            self.lcd = i2c.CharLCD(i2c_expander, address, port=port, charmap=charmap,cols=self.cols, rows=self.rows)
+            self.lcd = i2c.CharLCD('PCF8574', 0x27, port=1, charmap='A00', cols=self.cols, rows=self.rows)
             self.luz()
-        except:
-            return(None)
-        
+        except Exception:
+            self._cierra()
+
+    def _cierra(self):
+        # Libera el descriptor /dev/i2c-N del bus anterior para no agotar los fd
+        if self.lcd is not None:
+            try:
+                self.lcd.close()
+            except Exception:
+                pass
+            try:
+                self.lcd._bus.close()
+            except Exception:
+                pass
+            self.lcd = None
+
     def resetLCD(self):
-        try:
-            delattr(self,'lcd')
-        except:
-            pass
-        self.__init__()
+        self._conecta()
 
     def writeLine(self, datos, linea):
         datos_limpios = datos
